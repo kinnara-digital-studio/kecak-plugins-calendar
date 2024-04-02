@@ -20,11 +20,10 @@
                 }
               },
               headerToolbar: {
-                  left: 'prev,next addButton' //prev next  and add event button
+                  left: 'prev,next addButton', //prev next  and add event add button
                   center: 'title',
                   right: 'timeGridDay,dayGridWeek,dayGridMonth,multiMonthYear,listMonth' // user can switch calendar between day, week, month, and year
               },
-
               editable: true,
               dayMaxEvents: true, // allow "more" link when too many events
               navLinks: true,
