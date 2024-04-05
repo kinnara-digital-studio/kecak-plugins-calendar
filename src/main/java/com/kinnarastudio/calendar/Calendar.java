@@ -1,14 +1,21 @@
 package com.kinnarastudio.calendar;
 
+import com.kinnarastudio.commons.Try;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
+import org.joget.apps.app.dao.FormDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.DatalistDefinition;
+import org.joget.apps.app.model.FormDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
 import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.apps.datalist.service.DataListService;
+import org.joget.apps.form.model.Form;
+import org.joget.apps.form.service.FormService;
 import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.commons.util.LogUtil;
+import org.joget.commons.util.SecurityUtil;
 import org.joget.plugin.base.PluginManager;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,10 +25,7 @@ import org.springframework.context.ApplicationContext;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.FormatterClosedException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Calendar extends UserviewMenu{
 
@@ -46,6 +50,20 @@ public class Calendar extends UserviewMenu{
         final DataListCollection rows = dataList.getRows();
         final JSONArray events = generateEvents(rows);
         dataModel.put("events", events.toString());
+
+        final AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+        dataModel.put("appId", appDefinition.getAppId());
+        dataModel.put("appVersion", appDefinition.getVersion());
+
+        final String formDefId = getPropertyString("formId");
+        dataModel.put("formDefId", formDefId);
+
+        final JSONObject jsonForm = getJsonForm(formDefId);
+        dataModel.put("jsonForm", StringEscapeUtils.escapeHtml4(jsonForm.toString()));
+
+        final String nonce = generateNonce(appDefinition, jsonForm.toString());
+        dataModel.put("nonce", nonce);
+
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/Templates/homepage.ftl", null);
     }
 
@@ -111,6 +129,19 @@ public class Calendar extends UserviewMenu{
         return dataList;
     }
 
+    protected JSONObject getJsonForm(String formDefId) {
+        ApplicationContext appContext = AppUtil.getApplicationContext();
+        FormService formService = (FormService) appContext.getBean("formService");
+        FormDefinitionDao formDefinitionDao = (FormDefinitionDao) appContext.getBean("formDefinitionDao");
+        AppDefinition appDef = AppUtil.getCurrentAppDefinition();
+
+        return Optional.of(formDefId)
+                .map(s -> formDefinitionDao.loadById(s, appDef))
+                .map(FormDefinition::getJson)
+                .map(Try.onFunction(JSONObject::new))
+                .orElseGet(JSONObject::new);
+    }
+
     protected JSONArray generateEvents(DataListCollection dataListCollection){
         JSONArray events = new JSONArray();
         for (Object rows : dataListCollection) {
@@ -151,5 +182,15 @@ public class Calendar extends UserviewMenu{
         return events;
     }
 
+    protected String generateNonce(AppDefinition appDefinition, String jsonForm) {
+        return SecurityUtil.generateNonce(
+                new String[]{"EmbedForm", appDefinition.getAppId(), appDefinition.getVersion().toString(), jsonForm},
+                1);
+    }
 
+    protected String generateNonce(AppDefinition appDefinition, Form form) {
+        final FormService formService = (FormService) AppUtil.getApplicationContext().getBean("formService");
+        final String jsonForm = formService.generateElementJson(form);
+        return generateNonce(appDefinition, jsonForm);
+    }
 }
