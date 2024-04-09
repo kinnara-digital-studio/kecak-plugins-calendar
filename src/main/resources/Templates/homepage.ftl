@@ -45,7 +45,7 @@
             var jsonForm = JSON.parse($('input#jsonForm').val());
             var nonce = '${nonce}';
             kecakCalendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridWeek',
+                initialView: 'dayGridMonth',
                 selectable: true,
                 customButtons: {
                     addButton: {

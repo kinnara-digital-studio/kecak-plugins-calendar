@@ -165,7 +165,7 @@ public class Calendar extends UserviewMenu implements PluginWebSupport {
                     String field = propmapping.get("field");
                     String prop = propmapping.get("prop");
                     String value = (String) map.get(field);
-                    DateFormat dateValue = new SimpleDateFormat (getPropertyString("dateFormat"));
+                    DateFormat dateValue = new SimpleDateFormat (userviewMenu.getPropertyString("dateFormat"));
                     DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
                     if ((prop.equals("start") || prop.equals("end")) && value != null){
 
