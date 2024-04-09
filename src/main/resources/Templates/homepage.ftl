@@ -5,6 +5,7 @@
 
     <script src='${request.contextPath}/plugin/${className}/node_modules/fullcalendar/index.global.min.js'></script>
     <script>
+        var kecakCalendar;
         function popupForm(elementId, appId, appVersion, jsonForm, nonce, args, data, height, width) {
             let formUrl = '${request.contextPath}/web/app/' + appId + '/' + appVersion + '/form/embed?_submitButtonLabel=Submit';
             let frameId = args.frameId = 'Frame_' + elementId;
@@ -35,13 +36,15 @@
             let result = JSON.parse(args.result);
             let frameId = args.frameId;
             JPopup.hide(frameId);
+            //refresh
+            kecakCalendar.refetchEvents();
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             var jsonForm = JSON.parse($('input#jsonForm').val());
             var nonce = '${nonce}';
-            var calendar = new FullCalendar.Calendar(calendarEl, {
+            kecakCalendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridWeek',
                 selectable: true,
                 customButtons: {
@@ -61,20 +64,27 @@
                 editable: true,
                 dayMaxEvents: true, // allow "more" link when too many events
                 navLinks: true,
-                events: ${events},
+                events: function(fetchInfo, successCallback, failureCallback){
+                    $.get('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}', function(data, status){
+                        successCallback(
+                            data
+                        );
+                    });
+                },
                 eventClick: function(info) {
                     debugger;
                     let id = info.event.id;
                     popupForm('${formDefId}', '${appId}', '${appVersion}', jsonForm, nonce, {}, {id: id}, 800, 900);
                 }
             });
-            calendar.render();
+            kecakCalendar.render();
+
         });
 
     </script>
 </head>
 <body>
-    <input type='hidden' id='jsonForm' value='${jsonForm}' >
+    <input type='hidden' id='jsonForm' value="${jsonForm}" >
     <div id='calendar'></div>
 </body>
 </html>

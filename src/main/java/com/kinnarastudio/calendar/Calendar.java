@@ -4,30 +4,39 @@ import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
 import org.joget.apps.app.dao.FormDefinitionDao;
+import org.joget.apps.app.dao.UserviewDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.DatalistDefinition;
 import org.joget.apps.app.model.FormDefinition;
+import org.joget.apps.app.model.UserviewDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
 import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.apps.datalist.service.DataListService;
 import org.joget.apps.form.model.Form;
 import org.joget.apps.form.service.FormService;
+import org.joget.apps.userview.model.Userview;
 import org.joget.apps.userview.model.UserviewMenu;
+import org.joget.apps.userview.service.UserviewService;
 import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
 import org.joget.plugin.base.PluginManager;
+import org.joget.plugin.base.PluginWebSupport;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class Calendar extends UserviewMenu{
+public class Calendar extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public String getCategory() {
@@ -46,10 +55,7 @@ public class Calendar extends UserviewMenu{
         final Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("className", getClassName());
         final String dtId = getPropertyString("dataListId");
-        final DataList dataList = getDataList(dtId);
-        final DataListCollection rows = dataList.getRows();
-        final JSONArray events = generateEvents(rows);
-        dataModel.put("events", events.toString());
+        dataModel.put("dataListId", dtId);
 
         final AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
         dataModel.put("appId", appDefinition.getAppId());
@@ -63,6 +69,11 @@ public class Calendar extends UserviewMenu{
 
         final String nonce = generateNonce(appDefinition, jsonForm.toString());
         dataModel.put("nonce", nonce);
+
+        final String userviewId = getUserview().getPropertyString("id");
+        final String userMenuId = getUserview().getCurrent().getPropertyString("id");
+        dataModel.put("userviewId", userviewId);
+        dataModel.put("menuId", userMenuId);
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/Templates/homepage.ftl", null);
     }
@@ -142,13 +153,13 @@ public class Calendar extends UserviewMenu{
                 .orElseGet(JSONObject::new);
     }
 
-    protected JSONArray generateEvents(DataListCollection dataListCollection){
+    protected JSONArray generateEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu){
         JSONArray events = new JSONArray();
         for (Object rows : dataListCollection) {
             Map<String,Object> map = (Map<String, Object>) rows;
             JSONObject event = new JSONObject();
 
-            for(Map<String, String> propmapping : getPropertyGrid("dataListMapping")){
+            for(Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")){
 
                 try{
                     String field = propmapping.get("field");
@@ -192,5 +203,40 @@ public class Calendar extends UserviewMenu{
         final FormService formService = (FormService) AppUtil.getApplicationContext().getBean("formService");
         final String jsonForm = formService.generateElementJson(form);
         return generateNonce(appDefinition, jsonForm);
+    }
+
+    @Override
+    public void webService(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
+        String dataListId = httpServletRequest.getParameter("datalistId");
+        String userviewId = httpServletRequest.getParameter("userviewId");
+        String menuId = httpServletRequest.getParameter("menuId");
+        Userview userview = getUserview(userviewId);
+        UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
+        DataList dataList = getDataList(dataListId);
+        DataListCollection rows = dataList.getRows();
+        JSONArray events = generateEvents(rows,userviewMenu);
+        httpServletResponse.getWriter().write(events.toString());
+    }
+
+    public Userview getUserview(String userviewId) {
+        AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+        ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        UserviewService userviewService = (UserviewService) applicationContext.getBean("userviewService");
+        UserviewDefinitionDao userviewDefinitionDao = (UserviewDefinitionDao) applicationContext.getBean("userviewDefinitionDao");
+
+        return Optional.of(userviewId)
+                .map(s -> userviewDefinitionDao.loadById(s, appDefinition))
+                .map(UserviewDefinition::getJson)
+                .map(s -> AppUtil.processHashVariable(s, null, null, null))
+                .map(s -> userviewService.createUserview(s, null, false, AppUtil.getRequestContextPath(), null, null, false))
+                .orElse(null);
+    }
+
+    public UserviewMenu getUserviewMenu(Userview userview, String userviewId) {
+        return userview.getCategories().stream()
+                .flatMap(c -> c.getMenus().stream())
+                .filter(m -> !userviewId.isEmpty() && userviewId.equalsIgnoreCase(m.getPropertyString("id")))
+                .findFirst()
+                .orElse(null);
     }
 }
