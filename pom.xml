@@ -8,8 +8,8 @@
     <name>kecak-plugins-calendar</name>
     <url>http://www.kecak.org</url>
     <scm>
-        <connection>scm:git:ssh://</connection>
-        <developerConnection>scm:git:ssh://</developerConnection>
+        <connection>scm:git:ssh://git@github.com:kinnara-digital-studio/kecak-plugins-calendar.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:kinnara-digital-studio/kecak-plugins-calendar.git</developerConnection>
         <url>ssh://</url>
         <tag>HEAD</tag>
     </scm>
