@@ -209,15 +209,15 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String dataListId = request.getParameter("datalistId");
-        String userviewId = request.getParameter("userviewId");
-        String menuId = request.getParameter("menuId");
+        String dataListId = getParameter(request, "datalistId");
+        String userviewId = getParameter(request, "userviewId");
+        String menuId = getParameter(request, "menuId");
         Userview userview = getUserview(userviewId);
         UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
         DataList dataList = getDataList(dataListId);
         DataListCollection rows = dataList.getRows();
 
-        String action = request.getParameter("actions");
+        String action = getParameter(request, "actions");
         if (action.equals("event")) {
             JSONArray events = generateEvents(rows, userviewMenu);
             response.getWriter().write(events.toString());
@@ -235,8 +235,17 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             ServletOutputStream outputStream = response.getOutputStream();
             outputter.output(calendar, outputStream);
         } else {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid parameter action [" + action + "]");
         }
+    }
+
+    protected Optional<String> optParameter(HttpServletRequest request, String name) {
+        return Optional.ofNullable(request.getParameter(name));
+    }
+
+    protected String getParameter(HttpServletRequest request, String name) throws ServletException {
+        return Optional.ofNullable(request.getParameter(name))
+                .orElseThrow(() -> new ServletException("Parameter [" + name + "] is required"));
     }
 
     public Collection<VEvent> generateVEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu) {
