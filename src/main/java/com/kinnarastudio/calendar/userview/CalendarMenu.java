@@ -40,7 +40,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * Calendar Menu
+ */
 public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
+
+    public final static String LABEL = "Calendar";
 
     @Override
     public String getCategory() {
@@ -94,7 +99,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public String getName() {
-        return "Calendar";
+        return LABEL;
     }
 
     @Override
@@ -112,12 +117,12 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public String getLabel() {
-        return "Calendar";
+        return LABEL;
     }
 
     @Override
     public String getClassName() {
-        return Calendar.class.getName();
+        return CalendarMenu.class.getName();
     }
 
     @Override

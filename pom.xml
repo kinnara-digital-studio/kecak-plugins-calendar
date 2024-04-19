@@ -10,7 +10,7 @@
     <scm>
         <connection>scm:git:ssh://git@github.com:kinnara-digital-studio/kecak-plugins-calendar.git</connection>
         <developerConnection>scm:git:ssh://git@github.com:kinnara-digital-studio/kecak-plugins-calendar.git</developerConnection>
-        <url>ssh://</url>
+        <url>ssh://git@github.com:kinnara-digital-studio/kecak-plugins-calendar.git</url>
         <tag>HEAD</tag>
     </scm>
     <build>
