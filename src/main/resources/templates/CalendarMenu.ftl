@@ -75,7 +75,6 @@
                             data
                         );
                     });
-
                 },
                 eventClick: function(info) {
                     debugger;

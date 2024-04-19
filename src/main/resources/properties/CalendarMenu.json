@@ -44,7 +44,7 @@
       },
       {
         "name" : "dataListMapping",
-        "label": "DataListMapping",
+        "label": "DataList Mapping",
         "type" : "grid",
         "columns": [
           {

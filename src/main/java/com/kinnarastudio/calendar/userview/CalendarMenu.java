@@ -170,7 +170,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         for (Object rows : dataListCollection) {
             Map<String, Object> map = (Map<String, Object>) rows;
 
-
             try {
                 JSONObject event = new JSONObject();
 
@@ -181,7 +180,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                     DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
                     DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
                     if ((prop.equals("start") || prop.equals("end")) && value != null) {
-
                         try {
                             Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
                             //mengubah value dg tipe data String ke tipe data Date
@@ -256,7 +254,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .orElseThrow(() -> new ServletException("Parameter [" + name + "] is required"));
     }
 
-    public Collection<VEvent> generateVEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu) {
+    protected Collection<VEvent> generateVEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu) {
         Collection<VEvent> vEvents = new ArrayList<>();
         for (Object rows : dataListCollection) {
             Map<String, Object> map = (Map<String, Object>) rows;
