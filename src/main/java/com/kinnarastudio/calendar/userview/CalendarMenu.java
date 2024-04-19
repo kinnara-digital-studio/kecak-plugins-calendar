@@ -1,6 +1,9 @@
 package com.kinnarastudio.calendar.userview;
 
 import com.kinnarastudio.commons.Try;
+import net.fortuna.ical4j.data.CalendarOutputter;
+import net.fortuna.ical4j.model.component.VEvent;
+import net.fortuna.ical4j.model.property.*;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
 import org.joget.apps.app.dao.FormDefinitionDao;
@@ -28,6 +31,7 @@ import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -75,7 +79,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         dataModel.put("userviewId", userviewId);
         dataModel.put("menuId", userMenuId);
 
-        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/homepage.ftl", null);
+        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/CalendarMenu.ftl", null);
     }
 
     @Override
@@ -110,12 +114,12 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public String getClassName() {
-        return CalendarMenu.class.getName();
+        return Calendar.class.getName();
     }
 
     @Override
     public String getPropertyOptions() {
-        return AppUtil.readPluginResource(getClass().getName(), "/properties/calendar.json");
+        return AppUtil.readPluginResource(getClass().getName(), "/Properties/calendar.json");
     }
 
     protected DataList getDataList(String dataListId) {
@@ -153,42 +157,40 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .orElseGet(JSONObject::new);
     }
 
-    protected JSONArray generateEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu){
+    protected JSONArray generateEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu) {
         JSONArray events = new JSONArray();
         for (Object rows : dataListCollection) {
-            Map<String,Object> map = (Map<String, Object>) rows;
-            JSONObject event = new JSONObject();
+            Map<String, Object> map = (Map<String, Object>) rows;
 
-            for(Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")){
 
-                try{
+            try {
+                JSONObject event = new JSONObject();
+
+                for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
                     String field = propmapping.get("field");
                     String prop = propmapping.get("prop");
                     String value = (String) map.get(field);
-                    DateFormat dateValue = new SimpleDateFormat (userviewMenu.getPropertyString("dateFormat"));
+                    DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
                     DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
-                    if ((prop.equals("start") || prop.equals("end")) && value != null){
+                    if ((prop.equals("start") || prop.equals("end")) && value != null) {
 
-                        try{
+                        try {
                             Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
                             //mengubah value dg tipe data String ke tipe data Date
 
                             String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
-                            event.put(prop,finalDate);
-                        }
-                        catch (ParseException e){
+                            event.put(prop, finalDate);
+                        } catch (ParseException e) {
                             LogUtil.error(getClassName(), e, e.getLocalizedMessage());
                         }
-                    }
-                    else if (value != null){
-                        event.put(prop,value);
+                    } else if (value != null) {
+                        event.put(prop, value);
                     }
                 }
-                catch (JSONException tes){
-                    LogUtil.error(getClassName(), tes, tes.getMessage());
-                }
+                events.put(event);
+            } catch (JSONException tes) {
+                LogUtil.error(getClassName(), tes, tes.getMessage());
             }
-            events.put(event);
         }
         return events;
     }
@@ -214,8 +216,64 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
         DataList dataList = getDataList(dataListId);
         DataListCollection rows = dataList.getRows();
-        JSONArray events = generateEvents(rows,userviewMenu);
-        response.getWriter().write(events.toString());
+
+        String action = request.getParameter("actions");
+        if (action.equals("event")) {
+            JSONArray events = generateEvents(rows, userviewMenu);
+            response.getWriter().write(events.toString());
+        } else if (action.equals("ical")) {
+            net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
+            calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
+            calendar.getProperties().add(net.fortuna.ical4j.model.property.Version.VERSION_2_0);
+            calendar.getProperties().add(CalScale.GREGORIAN);
+
+            Collection<VEvent> events = generateVEvents(rows, userviewMenu);
+            calendar.getComponents().addAll(events);
+
+            CalendarOutputter outputter = new CalendarOutputter();
+            response.addHeader("Content-Disposition", "attachment; filename=calendar.ics");
+            ServletOutputStream outputStream = response.getOutputStream();
+            outputter.output(calendar, outputStream);
+        }
+    }
+
+    public Collection<VEvent> generateVEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu) {
+        Collection<VEvent> vEvents = new ArrayList<>();
+        for (Object rows : dataListCollection) {
+            Map<String, Object> map = (Map<String, Object>) rows;
+            try {
+                VEvent event = new VEvent();
+                for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
+
+                    String field = propmapping.get("field");
+                    String prop = propmapping.get("prop");
+                    String value = (String) map.get(field);
+                    DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+                    DateFormat dateTimeVevent = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+                    if (value == null) {
+                        continue;
+                    }
+                    switch (prop) {
+                        case "id":
+                            event.getProperties().add(new Uid(value));
+                            break;
+                        case "start":
+                            event.getProperties().add(new DtStart(dateTimeVevent.format(dateValue.parse(value))));
+                            break;
+                        case "end":
+                            event.getProperties().add(new DtEnd(dateTimeVevent.format(dateValue.parse(value))));
+                            break;
+                        case "title":
+                            event.getProperties().add(new Summary(value));
+                            break;
+                    }
+                }
+                vEvents.add(event);
+            } catch (ParseException tes) {
+                LogUtil.error(getClassName(), tes, tes.getMessage());
+            }
+        }
+        return vEvents;
     }
 
     public Userview getUserview(String userviewId) {
