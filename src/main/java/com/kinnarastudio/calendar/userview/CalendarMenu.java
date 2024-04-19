@@ -1,4 +1,4 @@
-package com.kinnarastudio.calendar;
+package com.kinnarastudio.calendar.userview;
 
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -36,16 +36,16 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class Calendar extends UserviewMenu implements PluginWebSupport {
+public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public String getCategory() {
-        return "Test";
+        return "Kecak";
     }
 
     @Override
     public String getIcon() {
-        return null;
+        return "<i class=\"fas fa-calendar\"></i>";
     }
 
     @Override
@@ -75,7 +75,7 @@ public class Calendar extends UserviewMenu implements PluginWebSupport {
         dataModel.put("userviewId", userviewId);
         dataModel.put("menuId", userMenuId);
 
-        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/Templates/homepage.ftl", null);
+        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/homepage.ftl", null);
     }
 
     @Override
@@ -110,12 +110,12 @@ public class Calendar extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public String getClassName() {
-        return Calendar.class.getName();
+        return CalendarMenu.class.getName();
     }
 
     @Override
     public String getPropertyOptions() {
-        return AppUtil.readPluginResource(getClass().getName(), "/Properties/calendar.json");
+        return AppUtil.readPluginResource(getClass().getName(), "/properties/calendar.json");
     }
 
     protected DataList getDataList(String dataListId) {
@@ -206,16 +206,16 @@ public class Calendar extends UserviewMenu implements PluginWebSupport {
     }
 
     @Override
-    public void webService(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
-        String dataListId = httpServletRequest.getParameter("datalistId");
-        String userviewId = httpServletRequest.getParameter("userviewId");
-        String menuId = httpServletRequest.getParameter("menuId");
+    public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String dataListId = request.getParameter("datalistId");
+        String userviewId = request.getParameter("userviewId");
+        String menuId = request.getParameter("menuId");
         Userview userview = getUserview(userviewId);
         UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
         DataList dataList = getDataList(dataListId);
         DataListCollection rows = dataList.getRows();
         JSONArray events = generateEvents(rows,userviewMenu);
-        httpServletResponse.getWriter().write(events.toString());
+        response.getWriter().write(events.toString());
     }
 
     public Userview getUserview(String userviewId) {

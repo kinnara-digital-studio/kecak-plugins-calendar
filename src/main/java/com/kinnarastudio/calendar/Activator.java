@@ -2,6 +2,8 @@ package com.kinnarastudio.calendar;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+import com.kinnarastudio.calendar.userview.CalendarMenu;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -14,7 +16,7 @@ public class Activator implements BundleActivator {
         registrationList = new ArrayList<ServiceRegistration>();
 
         //Register plugin here
-        registrationList.add(context.registerService(Calendar.class.getName(), new Calendar(), null));
+        registrationList.add(context.registerService(CalendarMenu.class.getName(), new CalendarMenu(), null));
     }
 
     public void stop(BundleContext context) {
