@@ -51,13 +51,18 @@
                     addButton: {
                         text: 'Add Event',
                         click: function() {
-                            //alert('clicked the add button!');
                             popupForm('${formDefId}', '${appId}', '${appVersion}', jsonForm, nonce, {}, {}, 800, 900);
+                        }
+                    },
+                    exportButtons: {
+                        text: 'Export ICS',
+                        click: function() {
+                            window.location='${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&actions=ical';
                         }
                     }
                 },
                 headerToolbar: {
-                    left: 'prev,next addButton', //prev next  and add event add button
+                    left: 'prev,next addButton exportButtons', //prev next  and add event add button
                     center: 'title',
                     right: 'timeGridDay,dayGridWeek,dayGridMonth,multiMonthYear,listMonth' // user can switch calendar between day, week, month, and year
                 },
@@ -65,11 +70,12 @@
                 dayMaxEvents: true, // allow "more" link when too many events
                 navLinks: true,
                 events: function(fetchInfo, successCallback, failureCallback){
-                    $.get('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}', function(data, status){
+                    $.get('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&actions=event', function(data, status){
                         successCallback(
                             data
                         );
                     });
+
                 },
                 eventClick: function(info) {
                     debugger;
