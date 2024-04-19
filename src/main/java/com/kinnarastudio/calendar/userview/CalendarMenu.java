@@ -127,7 +127,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public String getPropertyOptions() {
-        return AppUtil.readPluginResource(getClass().getName(), "/Properties/calendar.json");
+        return AppUtil.readPluginResource(getClass().getName(), "/properties/CalendarMenu.json");
     }
 
     protected DataList getDataList(String dataListId) {
