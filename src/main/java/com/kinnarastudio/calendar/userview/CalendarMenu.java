@@ -234,6 +234,8 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             response.addHeader("Content-Disposition", "attachment; filename=calendar.ics");
             ServletOutputStream outputStream = response.getOutputStream();
             outputter.output(calendar, outputStream);
+        } else {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
         }
     }
 
