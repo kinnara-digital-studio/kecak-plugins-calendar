@@ -250,7 +250,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
     }
 
     protected String getParameter(HttpServletRequest request, String name) throws ServletException {
-        return Optional.ofNullable(request.getParameter(name))
+        return optParameter(request, name)
                 .orElseThrow(() -> new ServletException("Parameter [" + name + "] is required"));
     }
 
@@ -293,7 +293,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         return vEvents;
     }
 
-    public Userview getUserview(String userviewId) {
+    protected Userview getUserview(String userviewId) {
         AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         UserviewService userviewService = (UserviewService) applicationContext.getBean("userviewService");
@@ -307,7 +307,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .orElse(null);
     }
 
-    public UserviewMenu getUserviewMenu(Userview userview, String userviewId) {
+    protected UserviewMenu getUserviewMenu(Userview userview, String userviewId) {
         return userview.getCategories().stream()
                 .flatMap(c -> c.getMenus().stream())
                 .filter(m -> !userviewId.isEmpty() && userviewId.equalsIgnoreCase(m.getPropertyString("id")))
