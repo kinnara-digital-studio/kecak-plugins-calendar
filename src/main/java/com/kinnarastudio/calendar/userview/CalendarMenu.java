@@ -165,11 +165,9 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .orElseGet(JSONObject::new);
     }
 
-    protected JSONArray generateEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu) {
+    protected JSONArray generateEvents(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu) {
         JSONArray events = new JSONArray();
-        for (Object rows : dataListCollection) {
-            Map<String, Object> map = (Map<String, Object>) rows;
-
+        for (Map<String, Object> map : dataListCollection) {
             try {
                 JSONObject event = new JSONObject();
 
@@ -221,7 +219,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         Userview userview = getUserview(userviewId);
         UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
         DataList dataList = getDataList(dataListId);
-        DataListCollection rows = dataList.getRows();
+        DataListCollection<Map<String, Object>> rows = dataList.getRows();
 
         String action = getParameter(request, "actions");
         if (action.equals("event")) {
@@ -254,10 +252,9 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .orElseThrow(() -> new ServletException("Parameter [" + name + "] is required"));
     }
 
-    protected Collection<VEvent> generateVEvents(DataListCollection dataListCollection, UserviewMenu userviewMenu) {
+    protected Collection<VEvent> generateVEvents(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu) {
         Collection<VEvent> vEvents = new ArrayList<>();
-        for (Object rows : dataListCollection) {
-            Map<String, Object> map = (Map<String, Object>) rows;
+        for (Map<String, Object> map : dataListCollection) {
             try {
                 VEvent event = new VEvent();
                 for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
