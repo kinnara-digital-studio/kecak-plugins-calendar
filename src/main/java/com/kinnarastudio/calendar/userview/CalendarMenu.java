@@ -23,6 +23,7 @@ import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.apps.userview.service.UserviewService;
 import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
+import org.joget.commons.util.StringUtil;
 import org.joget.plugin.base.PluginManager;
 import org.joget.plugin.base.PluginWebSupport;
 import org.json.JSONArray;
@@ -175,11 +176,11 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                     String field = propmapping.get("field");
                     String prop = propmapping.get("prop");
                     String value = (String) map.get(field);
-                    DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
-                    DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
+                    final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+                    final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
                     if ((prop.equals("start") || prop.equals("end")) && value != null) {
                         try {
-                            Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
+                            final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
                             //mengubah value dg tipe data String ke tipe data Date
 
                             String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
@@ -191,6 +192,12 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         event.put(prop, value);
                     }
                 }
+
+                final String title = event.getString("title");
+                final String digest = StringUtil.md5(title);
+                final String color = digest.substring(0, 6);
+
+                event.put("color", "#" + color);
                 events.put(event);
             } catch (JSONException tes) {
                 LogUtil.error(getClassName(), tes, tes.getMessage());
