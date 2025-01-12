@@ -18,8 +18,10 @@ import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.apps.datalist.service.DataListService;
 import org.joget.apps.form.model.Form;
 import org.joget.apps.form.service.FormService;
+import org.joget.apps.form.service.FormUtil;
 import org.joget.apps.userview.model.Userview;
 import org.joget.apps.userview.model.UserviewMenu;
+import org.joget.apps.userview.model.UserviewPermission;
 import org.joget.apps.userview.service.UserviewService;
 import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
@@ -62,8 +64,14 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
     public String getRenderPage() {
         ApplicationContext appContext = AppUtil.getApplicationContext();
         PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
+
+        final boolean hasPermissionToEdit = optPermission()
+                .map(UserviewPermission::isAuthorize)
+                .orElse(false);
+
         final Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("className", getClassName());
+
         final String dtId = getPropertyString("dataListId");
         dataModel.put("dataListId", dtId);
 
@@ -74,16 +82,19 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         final String formDefId = getPropertyString("formId");
         dataModel.put("formDefId", formDefId);
 
-        final JSONObject jsonForm = getJsonForm(formDefId);
+        final JSONObject jsonForm = getJsonForm(formDefId, !hasPermissionToEdit);
         dataModel.put("jsonForm", StringEscapeUtils.escapeHtml4(jsonForm.toString()));
 
         final String nonce = generateNonce(appDefinition, jsonForm.toString());
         dataModel.put("nonce", nonce);
 
         final String userviewId = getUserview().getPropertyString("id");
-        final String userMenuId = getUserview().getCurrent().getPropertyString("id");
         dataModel.put("userviewId", userviewId);
+
+        final String userMenuId = getUserview().getCurrent().getPropertyString("id");
         dataModel.put("menuId", userMenuId);
+
+        dataModel.put("editable", hasPermissionToEdit);
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/CalendarMenu.ftl", null);
     }
@@ -153,7 +164,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         return dataList;
     }
 
-    protected JSONObject getJsonForm(String formDefId) {
+    protected JSONObject getJsonForm(String formDefId, boolean readonly) {
         ApplicationContext appContext = AppUtil.getApplicationContext();
         FormService formService = (FormService) appContext.getBean("formService");
         FormDefinitionDao formDefinitionDao = (FormDefinitionDao) appContext.getBean("formDefinitionDao");
@@ -162,6 +173,9 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         return Optional.of(formDefId)
                 .map(s -> formDefinitionDao.loadById(s, appDef))
                 .map(FormDefinition::getJson)
+                .map(formService::createElementFromJson)
+                .map(Try.toPeek(e -> FormUtil.setReadOnlyProperty(e, readonly, readonly)))
+                .map(formService::generateElementJson)
                 .map(Try.onFunction(JSONObject::new))
                 .orElseGet(JSONObject::new);
     }
@@ -193,11 +207,13 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                     }
                 }
 
-                final String title = event.getString("title");
-                final String digest = StringUtil.md5(title);
-                final String color = digest.substring(0, 6);
+                if (randomColorByTitle()) {
+                    final String title = event.getString("title");
+                    final String digest = StringUtil.md5(title);
+                    final String color = digest.substring(0, 6);
 
-                event.put("color", "#" + color);
+                    event.put("color", "#" + color);
+                }
                 events.put(event);
             } catch (JSONException tes) {
                 LogUtil.error(getClassName(), tes, tes.getMessage());
@@ -317,5 +333,18 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .filter(m -> !userviewId.isEmpty() && userviewId.equalsIgnoreCase(m.getPropertyString("id")))
                 .findFirst()
                 .orElse(null);
+    }
+
+    protected boolean randomColorByTitle() {
+        return "true".equalsIgnoreCase(getPropertyString("randomColorByTitle"));
+    }
+
+    protected Optional<UserviewPermission> optPermission() {
+        final ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        final PluginManager pluginManager = (PluginManager) applicationContext.getBean("pluginManager");
+        return Optional.of("permission")
+                .map(this::getProperty)
+                .map(o -> (Map<String, Object>)o)
+                .map(pluginManager::getPlugin);
     }
 }
