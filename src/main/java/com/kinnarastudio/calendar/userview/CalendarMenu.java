@@ -207,7 +207,8 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                     }
                 }
 
-                if (randomColorByTitle()) {
+                final boolean randomColor = randomColorByTitle();
+                if (randomColor) {
                     final String title = event.getString("title");
                     final String digest = StringUtil.md5(title);
                     final String color = digest.substring(0, 6);
@@ -336,7 +337,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
     }
 
     protected boolean randomColorByTitle() {
-        return "true".equalsIgnoreCase(getPropertyString("randomColorByTitle"));
+        return true;
     }
 
     protected Optional<UserviewPermission> optPermission() {
@@ -344,7 +345,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         final PluginManager pluginManager = (PluginManager) applicationContext.getBean("pluginManager");
         return Optional.of("permission")
                 .map(this::getProperty)
-                .map(o -> (Map<String, Object>)o)
+                .map(o -> (Map<String, Object>) o)
                 .map(pluginManager::getPlugin);
     }
 }

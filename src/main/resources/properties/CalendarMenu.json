@@ -83,7 +83,7 @@
     "title": "UI",
     "properties": [
       {
-        "name": "randomColorByTitle",
+        "name": "randomColor",
         "label": "Random Color by Title",
         "type": "checkbox",
         "options": [
