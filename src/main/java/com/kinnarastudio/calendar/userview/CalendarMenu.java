@@ -14,7 +14,9 @@ import org.joget.apps.app.model.FormDefinition;
 import org.joget.apps.app.model.UserviewDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
+import org.joget.apps.datalist.model.DataListBinder;
 import org.joget.apps.datalist.model.DataListCollection;
+import org.joget.apps.datalist.model.DataListColumn;
 import org.joget.apps.datalist.service.DataListService;
 import org.joget.apps.form.model.Form;
 import org.joget.apps.form.service.FormService;
@@ -33,6 +35,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
+import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -42,6 +45,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Calendar Menu
@@ -189,7 +193,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
                     String field = propmapping.get("field");
                     String prop = propmapping.get("prop");
-                    String value = (String) map.get(field);
+                    String value = String.valueOf(map.get(field));
                     final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
                     final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
                     if ((prop.equals("start") || prop.equals("end")) && value != null) {
@@ -243,24 +247,32 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         Userview userview = getUserview(userviewId);
         UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
         DataList dataList = getDataList(dataListId);
-        DataListCollection<Map<String, Object>> rows = dataList.getRows();
+        DataListCollection<Map<String, Object>> rows = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataList.getRows())
+                .stream()
+                .flatMap(Collection::stream)
 
-        String action = getParameter(request, "actions");
-        if (action.equals("event")) {
-            JSONArray events = generateEvents(rows, userviewMenu);
+                // reformat content value
+                .map(row -> formatRow(dataList, row))
+                .collect(Collectors.toCollection(DataListCollection::new));
+
+
+        final String action = getParameter(request, "actions");
+        if ("event".equals(action)) {
+            final JSONArray events = generateEvents(rows, userviewMenu);
             response.getWriter().write(events.toString());
-        } else if (action.equals("ical")) {
+        } else if ("ical".equals(action)) {
             net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
             calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
             calendar.getProperties().add(net.fortuna.ical4j.model.property.Version.VERSION_2_0);
             calendar.getProperties().add(CalScale.GREGORIAN);
 
-            Collection<VEvent> events = generateVEvents(rows, userviewMenu);
+            final Collection<VEvent> events = generateVEvents(rows, userviewMenu);
             calendar.getComponents().addAll(events);
 
-            CalendarOutputter outputter = new CalendarOutputter();
+            final CalendarOutputter outputter = new CalendarOutputter();
             response.addHeader("Content-Disposition", "attachment; filename=calendar.ics");
-            ServletOutputStream outputStream = response.getOutputStream();
+
+            final ServletOutputStream outputStream = response.getOutputStream();
             outputter.output(calendar, outputStream);
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid parameter action [" + action + "]");
@@ -277,20 +289,22 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
     }
 
     protected Collection<VEvent> generateVEvents(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu) {
-        Collection<VEvent> vEvents = new ArrayList<>();
-        for (Map<String, Object> map : dataListCollection) {
+        final Collection<VEvent> vEvents = new ArrayList<>();
+        for (final Map<String, Object> map : dataListCollection) {
             try {
-                VEvent event = new VEvent();
+                final DateFormat dateTimeVevent = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+                final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+
+                final VEvent event = new VEvent();
                 for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
 
-                    String field = propmapping.get("field");
-                    String prop = propmapping.get("prop");
-                    String value = (String) map.get(field);
-                    DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
-                    DateFormat dateTimeVevent = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
-                    if (value == null) {
+                    final String field = propmapping.get("field");
+                    final String prop = propmapping.get("prop");
+                    final String value = String.valueOf(map.get(field));
+                    if ("null".equalsIgnoreCase(value) || value.isEmpty()) {
                         continue;
                     }
+
                     switch (prop) {
                         case "id":
                             event.getProperties().add(new Uid(value));
@@ -306,6 +320,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                             break;
                     }
                 }
+
                 vEvents.add(event);
             } catch (ParseException tes) {
                 LogUtil.error(getClassName(), tes, tes.getMessage());
@@ -347,5 +362,62 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .map(this::getProperty)
                 .map(o -> (Map<String, Object>) o)
                 .map(pluginManager::getPlugin);
+    }
+
+    @Nonnull
+    protected Map<String, Object> formatRow(@Nonnull DataList dataList, @Nonnull Map<String, Object> row) {
+        return Optional.of(dataList)
+                .map(DataList::getColumns)
+                .stream()
+                .flatMap(Arrays::stream)
+                .filter(Objects::nonNull)
+                .map(DataListColumn::getName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toMap(s -> s, s -> formatCell(dataList, row, s)));
+    }
+
+    /**
+     * Format
+     *
+     * @param dataList DataList
+     * @param row      Row
+     * @param field    Field
+     * @return
+     */
+    @Nonnull
+    protected Object formatCell(@Nonnull final DataList dataList, @Nonnull final Map<String, Object> row, String field) {
+        Object value = row.get(field);
+
+        return Optional.of(dataList)
+                .map(DataList::getColumns)
+                .stream()
+                .flatMap(Arrays::stream)
+                .filter(c -> field.equals(c.getName()))
+                .findFirst()
+                .flatMap(column -> Optional.of(column)
+                        .map(DataListColumn::getFormats)
+                        .stream()
+                        .flatMap(Collection::stream)
+                        .filter(Objects::nonNull)
+                        .map(f -> (Object) f.format(dataList, column, row, value))
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                )
+                .orElse(value);
+    }
+
+    /**
+     * Get Primary Key
+     *
+     * @param dataList
+     * @return
+     */
+    @Nonnull
+    protected String getPrimaryKeyColumn(@Nonnull final DataList dataList) {
+        return Optional.of(dataList)
+                .map(DataList::getBinder)
+                .map(DataListBinder::getPrimaryKeyColumnName)
+                .orElse("id");
     }
 }
