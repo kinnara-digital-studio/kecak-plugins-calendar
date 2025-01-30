@@ -86,11 +86,17 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         final String formDefId = getPropertyString("formId");
         dataModel.put("formDefId", formDefId);
 
-        final JSONObject jsonForm = getJsonForm(formDefId, !hasPermissionToEdit);
-        dataModel.put("jsonForm", StringEscapeUtils.escapeHtml4(jsonForm.toString()));
+        if (formDefId.isEmpty()) {
+            dataModel.put("editable", false);
+        } else {
+            final JSONObject jsonForm = getJsonForm(formDefId, !hasPermissionToEdit);
+            dataModel.put("jsonForm", StringEscapeUtils.escapeHtml4(jsonForm.toString()));
 
-        final String nonce = generateNonce(appDefinition, jsonForm.toString());
-        dataModel.put("nonce", nonce);
+            final String nonce = generateNonce(appDefinition, jsonForm.toString());
+            dataModel.put("nonce", nonce);
+
+            dataModel.put("editable", hasPermissionToEdit);
+        }
 
         final String userviewId = getUserview().getPropertyString("id");
         dataModel.put("userviewId", userviewId);
@@ -98,7 +104,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         final String userMenuId = getUserview().getCurrent().getPropertyString("id");
         dataModel.put("menuId", userMenuId);
 
-        dataModel.put("editable", hasPermissionToEdit);
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/CalendarMenu.ftl", null);
     }
