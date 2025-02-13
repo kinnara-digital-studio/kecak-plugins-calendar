@@ -228,7 +228,6 @@ public class CalendarTimeLineMenu extends UserviewMenu implements PluginWebSuppo
         final String userMenuId = getUserview().getCurrent().getPropertyString("id");
         dataModel.put("menuId", userMenuId);
 
-
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/CalendarTimelineMenu.ftl", null);
     }
 

@@ -30,6 +30,7 @@ import org.joget.commons.util.SecurityUtil;
 import org.joget.commons.util.StringUtil;
 import org.joget.plugin.base.PluginManager;
 import org.joget.plugin.base.PluginWebSupport;
+import org.joget.workflow.util.WorkflowUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -66,14 +67,29 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public String getRenderPage() {
+        HttpServletRequest request = WorkflowUtil.getHttpServletRequest();
+
+        final boolean isTimelineView = optParameter(request, "view")
+                .map("timeline"::equalsIgnoreCase)
+                .orElse(false);
+
+
+        final String template;
+        if(isTimelineView) {
+            template = "/templates/CalendarTimelineMenu.ftl";
+        } else {
+            template = "/templates/CalendarMenu.ftl";
+        }
+
         ApplicationContext appContext = AppUtil.getApplicationContext();
         PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
+
+        final Map<String, Object> dataModel = new HashMap<>();
 
         final boolean hasPermissionToEdit = optPermission()
                 .map(UserviewPermission::isAuthorize)
                 .orElse(false);
 
-        final Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("className", getClassName());
 
         final String dtId = getPropertyString("dataListId");
@@ -105,7 +121,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         dataModel.put("menuId", userMenuId);
 
 
-        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/CalendarMenu.ftl", null);
+        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), template, null);
     }
 
     @Override
@@ -265,6 +281,14 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         if ("event".equals(action)) {
             final JSONArray events = generateEvents(rows, userviewMenu);
             response.getWriter().write(events.toString());
+        } else if("timeline".equals(action)) {
+            try {
+                final JSONArray events = new JSONArray(AppUtil.readPluginResource(getClassName(), "/resources/timeline_data.json"));
+                response.getWriter().write(events.toString());
+            } catch (JSONException e) {
+                LogUtil.error(getClassName(), e, "");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+            }
         } else if ("ical".equals(action)) {
             net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
             calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
@@ -424,5 +448,47 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .map(DataList::getBinder)
                 .map(DataListBinder::getPrimaryKeyColumnName)
                 .orElse("id");
+    }
+
+    protected String getTimelineRenderPage(Map<String, Object> dataModel) {
+        ApplicationContext appContext = AppUtil.getApplicationContext();
+        PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
+
+        final boolean hasPermissionToEdit = optPermission()
+                .map(UserviewPermission::isAuthorize)
+                .orElse(false);
+
+        dataModel.put("className", getClassName());
+
+        final String dtId = getPropertyString("dataListId");
+        dataModel.put("dataListId", dtId);
+
+        final AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+        dataModel.put("appId", appDefinition.getAppId());
+        dataModel.put("appVersion", appDefinition.getVersion());
+
+        final String formDefId = getPropertyString("formId");
+        dataModel.put("formDefId", formDefId);
+
+        if (formDefId.isEmpty()) {
+            dataModel.put("editable", false);
+        } else {
+            final JSONObject jsonForm = getJsonForm(formDefId, !hasPermissionToEdit);
+            dataModel.put("jsonForm", StringEscapeUtils.escapeHtml4(jsonForm.toString()));
+
+            final String nonce = generateNonce(appDefinition, jsonForm.toString());
+            dataModel.put("nonce", nonce);
+
+            dataModel.put("editable", hasPermissionToEdit);
+        }
+
+        final String userviewId = getUserview().getPropertyString("id");
+        dataModel.put("userviewId", userviewId);
+
+        final String userMenuId = getUserview().getCurrent().getPropertyString("id");
+        dataModel.put("menuId", userMenuId);
+
+
+        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/CalendarTimelineMenu.ftl", null);
     }
 }
