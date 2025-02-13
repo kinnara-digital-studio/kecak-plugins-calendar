@@ -44,19 +44,19 @@
 
 //This could be an API call to grab data
 async function refreshFunction() {
-    const data= [];
+   
     try {
         const response = await fetch("https://sandbox.kecak.org/web/json/app/MTFRM_HRGA/plugin/com.kinnarastudio.calendar.userview.CalendarMenu/service?action=timeline&datalistId=booking_room&userviewId=mtfrm_hrghview&menuId=form_pinjam_ruangan&actions=timeline"); // Replace with actual API URL
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        data = await response.json();
+        const data = await response.json();
         console.log("Data fetched:", data);
         return data;
     } catch (error) {
         console.error("Error fetching data:", error);
         console.log();
-        return data;
+        return [];
     }
 }
 
