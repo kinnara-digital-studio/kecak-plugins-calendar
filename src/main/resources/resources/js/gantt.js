@@ -25,14 +25,19 @@ class Gantt {
     }
 
     async refreshData() {
+        const loadingIndicator = document.getElementById("loadingIndicator");
+        loadingIndicator.style.display = "block"; // Tampilkan loading
+        
         this.rawData = await this.refreshFunction();
         this.empty();
         if(this.rawData.length < 1){
             this.noDataFound();
+            loadingIndicator.style.display = "none";
             return;
         }
         this.processData();
         this.render();
+        loadingIndicator.style.display = "none";
     }
 
     processData() {
