@@ -24,8 +24,8 @@ class Gantt {
         this.refreshData();
     }
 
-    refreshData() {
-        this.rawData = this.refreshFunction();
+    async refreshData() {
+        this.rawData = await this.refreshFunction();
         this.empty();
         if(this.rawData.length < 1){
             this.noDataFound();
