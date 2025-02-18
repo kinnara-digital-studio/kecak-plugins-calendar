@@ -72,7 +72,7 @@
                 dayMaxEvents: true, // allow "more" link when too many events
                 navLinks: true,
                 events: function(fetchInfo, successCallback, failureCallback){
-                    $.get('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&actions=event', function(data, status){
+                    $.get('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=event', function(data, status){
                         successCallback(
                             data
                         );
