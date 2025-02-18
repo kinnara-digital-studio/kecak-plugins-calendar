@@ -75,7 +75,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
 
         final String template;
-        if(isTimelineView) {
+        if (isTimelineView) {
             template = "/templates/CalendarTimelineMenu.ftl";
         } else {
             template = "/templates/CalendarMenu.ftl";
@@ -248,6 +248,47 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         return events;
     }
 
+    protected JSONArray getTimelineData(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu) {
+        return new JSONArray() {{
+            for (Map<String, Object> map : dataListCollection) {
+                try {
+                    put(new JSONObject() {{
+                        for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
+                            String field = propmapping.get("field");
+                            String prop = propmapping.get("prop");
+                            String value = String.valueOf(map.get(field));
+
+                            if (value == null)
+                                continue;
+
+                            final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+                            final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
+                            if (prop.equals("start") || prop.equals("end")) {
+                                try {
+                                    final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
+                                    //mengubah value dg tipe data String ke tipe data Date
+
+                                    String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
+                                    put(prop, finalDate);
+                                } catch (ParseException e) {
+                                    LogUtil.error(getClassName(), e, e.getLocalizedMessage());
+                                }
+                            } else if ("title".equals(prop)) {
+                                put("row", value);
+                            } else if("id".equals(prop)) {
+                                put("recordID", value);
+                            } else {
+                                put(prop, value);
+                            }
+                        }
+                    }});
+                } catch (JSONException e) {
+                    LogUtil.error(getClassName(), e, e.getMessage());
+                }
+            }
+        }};
+    }
+
     protected String generateNonce(AppDefinition appDefinition, String jsonForm) {
         return SecurityUtil.generateNonce(
                 new String[]{"EmbedForm", appDefinition.getAppId(), appDefinition.getVersion().toString(), jsonForm},
@@ -267,6 +308,11 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         String menuId = getParameter(request, "menuId");
         Userview userview = getUserview(userviewId);
         UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
+
+        if(userviewMenu == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
+
         DataList dataList = getDataList(dataListId);
         DataListCollection<Map<String, Object>> rows = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataList.getRows())
                 .stream()
@@ -277,18 +323,16 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .collect(Collectors.toCollection(DataListCollection::new));
 
 
-        final String action = getParameter(request, "actions");
+        final String action = getParameter(request, "action");
         if ("event".equals(action)) {
             final JSONArray events = generateEvents(rows, userviewMenu);
             response.getWriter().write(events.toString());
-        } else if("timeline".equals(action)) {
-            try {
-                final JSONArray events = new JSONArray(AppUtil.readPluginResource(getClassName(), "/resources/timeline_data.json"));
-                response.getWriter().write(events.toString());
-            } catch (JSONException e) {
-                LogUtil.error(getClassName(), e, "");
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
-            }
+        } else if ("timeline".equals(action)) {
+//                final JSONArray events = new JSONArray(AppUtil.readPluginResource(getClassName(), "/resources/mock-data.json"));
+
+            final JSONArray events = getTimelineData(rows, userviewMenu);
+
+            response.getWriter().write(events.toString());
         } else if ("ical".equals(action)) {
             net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
             calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
