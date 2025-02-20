@@ -248,40 +248,68 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         return events;
     }
 
-    protected JSONArray getTimelineData(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu) {
+    protected JSONArray getTimelineData(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu, int page) {
+        final Calendar calendar = Calendar.getInstance();
+
+        calendar.add(Calendar.DATE, page);
+
+        calendar.set(Calendar.HOUR, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+
+        final Date early = calendar.getTime();
+
+        calendar.set(Calendar.HOUR, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+
+        final Date late = calendar.getTime();
+
+        final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+        final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
+        final Map<String, String>[] dataListMapping = userviewMenu.getPropertyGrid("dataListMapping");
+
         return new JSONArray() {{
             for (Map<String, Object> map : dataListCollection) {
                 try {
-                    put(new JSONObject() {{
-                        for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
-                            String field = propmapping.get("field");
-                            String prop = propmapping.get("prop");
-                            String value = String.valueOf(map.get(field));
+                    final JSONObject jsonRow = new JSONObject() {{
+                        for (Map<String, String> propmapping : dataListMapping) {
+                            final String field = propmapping.get("field");
+                            final String prop = propmapping.get("prop");
+                            final String value = String.valueOf(map.get(field));
 
-                            if (value == null)
-                                continue;
+                            if (value == null) continue;
 
-                            final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
-                            final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
-                            if (prop.equals("start") || prop.equals("end")) {
-                                try {
-                                    final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
-                                    //mengubah value dg tipe data String ke tipe data Date
+                            switch (prop) {
+                                case "start":
+                                case "end":
+                                    try {
+                                        final Date dtListDate = dateValue.parse(value);
+                                        if (early.before(dtListDate) && dtListDate.before(late)) {
+                                            final String finalDate = dateTime.format(dtListDate);
+                                            put(prop, finalDate);
+                                        }
 
-                                    String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
-                                    put(prop, finalDate);
-                                } catch (ParseException e) {
-                                    LogUtil.error(getClassName(), e, e.getLocalizedMessage());
-                                }
-                            } else if ("title".equals(prop)) {
-                                put("row", value);
-                            } else if("id".equals(prop)) {
-                                put("recordID", value);
-                            } else {
-                                put(prop, value);
+                                    } catch (ParseException e) {
+                                        LogUtil.error(getClassName(), e, e.getLocalizedMessage());
+                                    }
+                                    break;
+                                case "title":
+                                    put("row", value);
+                                    break;
+                                case "id":
+                                    put("recordID", value);
+                                    break;
+                                default:
+                                    put(prop, value);
+                                    break;
                             }
                         }
-                    }});
+                    }};
+
+                    if (jsonRow.has("start") && jsonRow.has("end")) {
+                        put(jsonRow);
+                    }
                 } catch (JSONException e) {
                     LogUtil.error(getClassName(), e, e.getMessage());
                 }
@@ -309,8 +337,9 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         Userview userview = getUserview(userviewId);
         UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
 
-        if(userviewMenu == null) {
+        if (userviewMenu == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
         }
 
         DataList dataList = getDataList(dataListId);
@@ -329,8 +358,10 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             response.getWriter().write(events.toString());
         } else if ("timeline".equals(action)) {
 //                final JSONArray events = new JSONArray(AppUtil.readPluginResource(getClassName(), "/resources/mock-data.json"));
-
-            final JSONArray events = getTimelineData(rows, userviewMenu);
+            final int page = optParameter(request, "page")
+                    .map(Try.onFunction(Integer::parseInt, (NumberFormatException ignored) -> 0))
+                    .orElse(0);
+            final JSONArray events = getTimelineData(rows, userviewMenu, page);
 
             response.getWriter().write(events.toString());
         } else if ("ical".equals(action)) {
