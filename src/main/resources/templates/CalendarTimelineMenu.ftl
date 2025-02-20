@@ -21,11 +21,11 @@
     </body>
 
      <script>
-    $(document).ready(function () {
+         $(document).ready(function () {
         let currentPage = 0; // Track current page
-        let ganttChart; // Store Gantt instance globally
+        let ganttChart; // Store Gantt instance
 
-        async function fetchData(page = 0) {
+        async function refreshFunction(page = 0) {
             try {
                 const response = await fetch('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline&page=' + page);
                 
@@ -33,6 +33,7 @@
 
                 const data = await response.json();
                 console.log("Data fetched for page " + page, data);
+
                 return data; 
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -50,36 +51,34 @@
             linkAlias: null,
             tooltipAlias: "tooltip",
             groupBy: "groupId,subGroupId",
-            groupByAlias: "group,subGroup"
+            groupByAlias: "group,subGroup",
+            refreshFunction: () => refreshFunction(currentPage) 
         };
 
-        //Custom function to update Gantt data without full reinitialization
-        async function updateData(page = 0) {
-            currentPage = page;
+        ganttChart = new Gantt("chart", params);
+
+        //Custom updateData Function for Pagination
+        ganttChart.updateData = async function (page) {
+            currentPage = page; // Update current page
             $("#currentPage").text('Page: ' + (currentPage + 1));
 
-            const newData = await fetchData(page);
+            const newData = await refreshFunction(page);
             if (newData.length > 0) {
-                if (ganttChart) {
-                    ganttChart.clear(); // Clear existing chart data
-                    ganttChart.addData(newData); // Add new data
-                } else {
-                    params.data = newData;
-                    ganttChart = new Gantt("chart", params); // Initialize on first load
-                }
+               // ganttChart.clear(); 
+                ganttChart.refreshData(newData); //Load new data
             }
-        }
+        };
 
-        //Load first page on startup
-        updateData(currentPage);
+        //Load first page
+       // ganttChart.updateData(currentPage);
 
         //Pagination Buttons
         $("#prevPage").click(() => {
-            if (currentPage > 0) updateData(currentPage - 1);
+            if (currentPage > 0) ganttChart.updateData(currentPage - 1);
         });
 
         $("#nextPage").click(() => {
-            updateData(currentPage + 1);
+            ganttChart.updateData(currentPage + 1);
         });
     });
     </script>
