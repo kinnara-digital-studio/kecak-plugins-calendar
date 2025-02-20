@@ -22,9 +22,9 @@
 
      <script>
         $(document).ready(function () {
-            let currentPage = 1; // Track current page
+            let currentPage = 0; // Track current page
 
-            async function refreshFunction(page = 1) {
+            async function refreshFunction(page = 0) {
                 try {
                     const response = await fetch('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline&page=' + page);
                     
@@ -57,7 +57,7 @@
 
             let ganttChart = new Gantt("chart", params);
 
-            ganttChart.refreshData = async function (page = 1) {
+            ganttChart.refreshData = async function (page = 0) {
                 currentPage = page; // Update current page
                 $("#currentPage").text('Page: ' + currentPage);
 
@@ -72,7 +72,7 @@
 
             // Pagination Buttons
             $("#prevPage").click(() => {
-                if (currentPage > 1) {
+                if (currentPage > 0) {
                     ganttChart.refreshData(currentPage - 1);
                 }
             });
