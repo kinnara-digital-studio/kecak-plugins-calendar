@@ -7,29 +7,40 @@
         <div id="chart">
             <div id="loadingIndicator" style="display: none;">Loading...</div>
         </div>
+        <!-- Untuk Halaman -->
+        <div>
+            <button id="prevPage">Previous</button>
+            <span id="currentPage">Page: 1</span>
+            <button id="nextPage">Next</button>
+        </div>
+
+
+
         <script src="${request.contextPath}/plugin/${className}/js/gantt.js"></script>
         <#-- <script src="${request.contextPath}/plugin/${className}/js/sample-chart/initialize-gantt.js"></script> -->
     </body>
 
-    <script>
-        $(document).ready(function() {
-            async function refreshFunction() {
+     <script>
+        $(document).ready(function () {
+            let currentPage = 1; // Track current page
+
+            async function refreshFunction(page = 1) {
                 try {
-                    const response = await fetch("${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline"); // Replace with actual API URL
-                    if (!response.ok) {
-                        throw new Error('HTTP error! Status: '+ response.status);
-                    }
+                    const response = await fetch(`${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline&page=${page}`);
+                    
+                    if (!response.ok) throw new Error('HTTP error! Status: ' + response.status);
+
                     const data = await response.json();
-                    console.log("Data fetched:", data);
-                    return data;
+                    console.log("Data fetched for page " + page, data);
+
+                    return data; // Return data in its original format
                 } catch (error) {
                     console.error("Error fetching data:", error);
-                    console.log();
                     return [];
                 }
             }
 
-            //Parameters that the chart expects
+           
             let params = {
                 sidebarHeader: "Unused right now",
                 noDataFoundMessage: "No data found",
@@ -41,29 +52,34 @@
                 tooltipAlias: "tooltip",
                 groupBy: "groupId,subGroupId",
                 groupByAlias: "group,subGroup",
-                refreshFunction: refreshFunction
-            }
+                refreshFunction: () => refreshFunction(currentPage) // Pass currentPage
+            };
 
-            //Create the chart.
-            //On first render the chart will call its refreshData function on its own.
-            // let ganttChart = new Gantt("chart", params);
-
-            //To refresh the chart's data
-            // ganttChart.refreshData();
-
-            // Initialize the Gantt chart
             let ganttChart = new Gantt("chart", params);
 
-            // Override refreshData to include API call
-            ganttChart.refreshData = async function () {
-                const newData = await refreshFunction();
+            ganttChart.refreshData = async function (page = 1) {
+                currentPage = page; // Update current page
+                $("#currentPage").text(`Page: ${currentPage}`);
+
+                const newData = await refreshFunction(page);
                 if (newData) {
-                    ganttChart.updateData(newData); // Assuming updateData is the method to refresh chart data
+                    ganttChart.updateData(newData); // Update Gantt chart
                 }
             };
 
-            // Call refreshData manually if needed
-            ganttChart.refreshData();
+            // Load first page
+            ganttChart.refreshData(currentPage);
+
+            // Pagination Buttons
+            $("#prevPage").click(() => {
+                if (currentPage > 1) {
+                    ganttChart.refreshData(currentPage - 1);
+                }
+            });
+
+            $("#nextPage").click(() => {
+                ganttChart.refreshData(currentPage + 1);
+            });
         });
     </script>
 </html>
