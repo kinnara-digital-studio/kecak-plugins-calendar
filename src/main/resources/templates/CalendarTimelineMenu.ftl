@@ -60,7 +60,7 @@
         //Custom updateData Function for Pagination
         ganttChart.updateData = async function (page) {
             currentPage = page; // Update current page
-            $("#currentPage").text('Page: ' + (currentPage +1));
+            $("#currentPage").text('Page: ' + (currentPage));
 
             const newData = await refreshFunction(page);
             if (newData.length > 0) {
