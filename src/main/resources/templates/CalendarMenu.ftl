@@ -61,10 +61,16 @@
                         click: function() {
                             window.location='${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&actions=ical';
                         }
+                    },
+                    timelineButton: {
+                        text: 'Gantt',
+                        click: function() {
+                            window.location='${request.contextPath}/web/userview/${appId}/${userviewId}/_/${customId!menuId}?view=timeline';
+                        }
                     }
                 },
                 headerToolbar: {
-                    left: 'prev,next <#if editable>addButton </#if>exportButtons', //prev next  and add event add button
+                    left: 'prev,next <#if editable>addButton </#if>exportButtons timelineButton', //prev next  and add event add button
                     center: 'title',
                     right: 'timeGridDay,dayGridWeek,dayGridMonth,multiMonthYear,listMonth' // user can switch calendar between day, week, month, and year
                 },

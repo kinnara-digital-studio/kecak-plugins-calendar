@@ -120,6 +120,10 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         final String userMenuId = getUserview().getCurrent().getPropertyString("id");
         dataModel.put("menuId", userMenuId);
 
+        final String customId = getUserview().getCurrent().getPropertyString("customId");
+        if(customId != null && !customId.isEmpty()) {
+            dataModel.put("customId", customId);
+        }
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), template, null);
     }
