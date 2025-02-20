@@ -26,7 +26,7 @@
 
             async function refreshFunction(page = 1) {
                 try {
-                    const response = await fetch(`${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline&page=${page}`);
+                    const response = await fetch('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline&page=' + page);
                     
                     if (!response.ok) throw new Error('HTTP error! Status: ' + response.status);
 
@@ -59,7 +59,7 @@
 
             ganttChart.refreshData = async function (page = 1) {
                 currentPage = page; // Update current page
-                $("#currentPage").text(`Page: ${currentPage}`);
+                $("#currentPage").text('Page: ' + currentPage);
 
                 const newData = await refreshFunction(page);
                 if (newData) {
