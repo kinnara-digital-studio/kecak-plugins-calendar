@@ -121,7 +121,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         dataModel.put("menuId", userMenuId);
 
         final String customId = getUserview().getCurrent().getPropertyString("customId");
-        if(customId != null && !customId.isEmpty()) {
+        if (customId != null && !customId.isEmpty()) {
             dataModel.put("customId", customId);
         }
 
@@ -269,6 +269,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
         final Date late = calendar.getTime();
 
+        LogUtil.info(getClassName(), "early [" + early + "] late [" + late + "]");
         final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
         final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
         final Map<String, String>[] dataListMapping = userviewMenu.getPropertyGrid("dataListMapping");

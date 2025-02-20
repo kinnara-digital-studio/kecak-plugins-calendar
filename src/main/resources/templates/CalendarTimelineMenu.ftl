@@ -9,6 +9,8 @@
         </div>
         <!-- Untuk Halaman -->
         <div style="margin-top:10px;">
+            <button id="calendarView">Calendar</button>
+            &nbsp;
             <button id="prevPage">Previous</button>
             <span id="currentPage">Page: 1</span>
             <button id="nextPage">Next</button>
@@ -50,8 +52,8 @@
             rowAlias: "row",
             linkAlias: null,
             tooltipAlias: "tooltip",
-            groupBy: "groupId,subGroupId",
-            groupByAlias: "group,subGroup",
+            <#-- groupBy: "groupId,subGroupId", -->
+            <#-- groupByAlias: "group,subGroup", -->
             refreshFunction: () => refreshFunction(currentPage) 
         };
 
@@ -79,6 +81,10 @@
 
         $("#nextPage").click(() => {
             ganttChart.updateData(currentPage + 1);
+        });
+
+        $("#calendarView").click(() => {
+            window.location='${request.contextPath}/web/userview/${appId}/${userviewId}/_/${customId!menuId}';
         });
     });
     </script>
