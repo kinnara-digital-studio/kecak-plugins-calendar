@@ -12,7 +12,7 @@
             <button id="calendarView">Calendar</button>
             &nbsp;
             <button id="prevPage">Previous</button>
-            <span id="currentPage">Page: 1</span>
+            <span id="currentPage">${.now?date?string["MM/dd/yyyy"]}</span>
             <button id="nextPage">Next</button>
         </div>
 
@@ -62,7 +62,10 @@
         //Custom updateData Function for Pagination
         ganttChart.updateData = async function (page) {
             currentPage = page; // Update current page
-            $("#currentPage").text('Page: ' + (currentPage));
+            let date = new Date();
+            date.setDate(date.getDate() + page);
+
+            $("#currentPage").text(date.toLocaleDateString());
 
             const newData = await refreshFunction(page);
             if (newData.length > 0) {
@@ -76,7 +79,7 @@
 
         //Pagination Buttons
         $("#prevPage").click(() => {
-            if (currentPage > 0) ganttChart.updateData(currentPage - 1);
+            ganttChart.updateData(currentPage - 1)
         });
 
         $("#nextPage").click(() => {

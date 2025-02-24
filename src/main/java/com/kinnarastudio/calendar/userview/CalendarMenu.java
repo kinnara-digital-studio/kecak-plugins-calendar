@@ -290,8 +290,15 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                                 case "end":
                                     try {
                                         final Date dtListDate = dateValue.parse(value);
-                                        if (early.before(dtListDate) && dtListDate.before(late)) {
-                                            final String finalDate = dateTime.format(dtListDate);
+                                        if (early.before(dtListDate) || dtListDate.before(late)) {
+                                            final String finalDate;
+                                            if (dtListDate.before(early)) {
+                                                finalDate = dateTime.format(early);
+                                            } else if (dtListDate.after(late)) {
+                                                finalDate = dateTime.format(late);
+                                            } else {
+                                                finalDate = dateTime.format(dtListDate);
+                                            }
                                             put(prop, finalDate);
                                         }
 
