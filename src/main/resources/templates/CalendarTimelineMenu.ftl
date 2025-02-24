@@ -27,7 +27,7 @@
         let currentPage = 0; // Track current page
         let ganttChart; // Store Gantt instance
 
-        async function refreshFunction(page = 0) {
+        async function _refreshFunction(page = 0) {
             try {
                 const response = await fetch('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline&page=' + page);
                 
@@ -54,7 +54,7 @@
             tooltipAlias: "tooltip",
             <#-- groupBy: "groupId,subGroupId", -->
             <#-- groupByAlias: "group,subGroup", -->
-            refreshFunction: () => refreshFunction(currentPage) 
+            refreshFunction: () => _refreshFunction(currentPage)
         };
 
         ganttChart = new Gantt("chart", params);
@@ -67,11 +67,8 @@
 
             $("#currentPage").text(date.toLocaleDateString());
 
-            const newData = await refreshFunction(page);
-            if (newData.length > 0) {
-               // ganttChart.clear(); 
-                ganttChart.refreshData(newData); //Load new data
-            }
+            currentPage = page;
+            ganttChart.refreshData();
         };
 
         //Load first page
