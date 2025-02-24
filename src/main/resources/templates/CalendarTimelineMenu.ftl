@@ -4,17 +4,18 @@
         <link rel="stylesheet" href="${request.contextPath}/plugin/${className}/js/gantt.css" type="text/css"/>
     </head>
     <body>
-        <div id="chart">
-            <div id="loadingIndicator" style="display: none;">Loading...</div>
-        </div>
-        <!-- Untuk Halaman -->
-        <div style="margin-top:10px;">
+         <!-- Untuk Halaman -->
+        <div style="margin-bottom:10px;">
             <button id="calendarView">Calendar</button>
             &nbsp;
             <button id="prevPage">Previous</button>
             <span id="currentPage">${.now?date?string["MM/dd/yyyy"]}</span>
             <button id="nextPage">Next</button>
         </div>
+        <div id="chart">
+            <div id="loadingIndicator" style="display: none;">Loading...</div>
+        </div>
+       
 
 
 
@@ -57,7 +58,7 @@
             refreshFunction: () => refreshFunction(currentPage) 
         };
 
-        ganttChart = new Gantt("chart", params);
+        //ganttChart = new Gantt("chart", params);
 
         //Custom updateData Function for Pagination
         ganttChart.updateData = async function (page) {
