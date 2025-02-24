@@ -58,7 +58,7 @@
             refreshFunction: () => _refreshFunction(currentPage)
         };
 
-        //ganttChart = new Gantt("chart", params);
+        ganttChart = new Gantt("chart", params);
 
         //Custom updateData Function for Pagination
         ganttChart.updateData = async function (page) {

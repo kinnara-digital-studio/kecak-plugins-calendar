@@ -287,14 +287,27 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
                             switch (prop) {
                                 case "start":
-                                case "end":
                                     try {
                                         final Date dtListDate = dateValue.parse(value);
-                                        if (early.before(dtListDate) || dtListDate.before(late)) {
+                                        if (dtListDate.before(late)) {
                                             final String finalDate;
                                             if (dtListDate.before(early)) {
                                                 finalDate = dateTime.format(early);
-                                            } else if (dtListDate.after(late)) {
+                                            } else {
+                                                finalDate = dateTime.format(dtListDate);
+                                            }
+                                            put(prop, finalDate);
+                                        }
+                                    } catch (ParseException e) {
+                                        LogUtil.error(getClassName(), e, e.getLocalizedMessage());
+                                    }
+                                    break;
+                                case "end":
+                                    try {
+                                        final Date dtListDate = dateValue.parse(value);
+                                        if (dtListDate.after(early)) {
+                                            final String finalDate;
+                                            if (dtListDate.after(late)) {
                                                 finalDate = dateTime.format(late);
                                             } else {
                                                 finalDate = dateTime.format(dtListDate);
