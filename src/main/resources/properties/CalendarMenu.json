@@ -42,39 +42,39 @@
         "required" : "true"
       },
       {
-        "name" : "dataListMapping",
         "label": "DataList Mapping",
-        "type" : "grid",
-        "columns": [
-          {
-            "key": "prop",
-            "label": "properties",
-            "required": "true",
-            "options": [
-              {
-                "value": "id",
-                "label": "Id"
-              },
-              {
-              "value": "title",
-              "label": "Title"
-              },
-              {
-                "value": "start",
-                "label": "Start"
-              },
-              {
-                "value": "end",
-                "label": "End"
-              }
-            ]
-          },
-          {
-            "key": "field",
-            "label": "fields",
-            "required": "true"
-          }
-        ]
+        "type": "header"
+      },
+      {
+        "name" : "dataListMapId",
+        "label": "ID Field",
+        "type" : "textfield",
+        "value": "id",
+        "required": "true"
+      },
+      {
+        "name" : "dataListMapTitle",
+        "label": "Title Field",
+        "type" : "textfield",
+        "required": "true"
+      },
+      {
+        "name" : "dataListMapDateStart",
+        "label": "Date-Start Field",
+        "type" : "textfield",
+        "required": "true"
+      },
+      {
+        "name" : "dataListMapDateEnd",
+        "label": "Date-End Field",
+        "type" : "textfield",
+        "required": "true"
+      },
+      {
+        "name" : "dataListMapTimelineRow",
+        "label": "Timeline-Row Field",
+        "type" : "textfield",
+        "required": "true"
       }
     ]
   },

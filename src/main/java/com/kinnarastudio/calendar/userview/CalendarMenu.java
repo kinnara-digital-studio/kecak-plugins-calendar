@@ -2,6 +2,8 @@ package com.kinnarastudio.calendar.userview;
 
 import com.kinnarastudio.commons.Try;
 import net.fortuna.ical4j.data.CalendarOutputter;
+import net.fortuna.ical4j.model.Property;
+import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.property.*;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -210,46 +212,76 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
     }
 
     protected JSONArray generateEvents(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu) {
-        JSONArray events = new JSONArray();
-        for (Map<String, Object> map : dataListCollection) {
-            try {
-                JSONObject event = new JSONObject();
+        final String fieldId = userviewMenu.getPropertyString("dataListMapId");
+        final String fieldTitle = userviewMenu.getPropertyString("dataListMapTitle");
+        final String fieldStart = userviewMenu.getPropertyString("dataListMapDateStart");
+        final String fieldEnd = userviewMenu.getPropertyString("dataListMapDateEnd");
 
-                for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
-                    String field = propmapping.get("field");
-                    String prop = propmapping.get("prop");
-                    String value = String.valueOf(map.get(field));
-                    final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
-                    final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
-                    if ((prop.equals("start") || prop.equals("end")) && value != null) {
+        return new JSONArray() {{
+            final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
+            final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+
+            for (Map<String, Object> map : dataListCollection) {
+                try {
+                    put(new JSONObject() {{
+                        final String recordId = String.valueOf(map.get(fieldId));
+                        put("id", recordId);
+
+                        final String title = String.valueOf(map.get(fieldTitle));
+                        put("title", title);
+
                         try {
+                            final String value = String.valueOf(map.get(fieldStart));
                             final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
-                            //mengubah value dg tipe data String ke tipe data Date
-
                             String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
-                            event.put(prop, finalDate);
+                            put("start", finalDate);
                         } catch (ParseException e) {
                             LogUtil.error(getClassName(), e, e.getLocalizedMessage());
                         }
-                    } else if (value != null) {
-                        event.put(prop, value);
-                    }
-                }
 
-                final boolean randomColor = randomColorByTitle();
-                if (randomColor) {
-                    final String title = event.getString("title");
-                    final String digest = StringUtil.md5(title);
-                    final String color = digest.substring(0, 6);
+                        try {
+                            final String value = String.valueOf(map.get(fieldEnd));
+                            final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
+                            String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
+                            put("end", finalDate);
+                        } catch (ParseException e) {
+                            LogUtil.error(getClassName(), e, e.getLocalizedMessage());
+                        }
 
-                    event.put("color", "#" + color);
+//                        for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
+//                            String field = propmapping.get("field");
+//                            String prop = propmapping.get("prop");
+//                            String value = String.valueOf(map.get(field));
+//                            final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+//                            final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
+//                            if ((prop.equals("start") || prop.equals("end")) && value != null) {
+//                                try {
+//                                    final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
+//                                    //mengubah value dg tipe data String ke tipe data Date
+//
+//                                    String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
+//                                    put(prop, finalDate);
+//                                } catch (ParseException e) {
+//                                    LogUtil.error(getClassName(), e, e.getLocalizedMessage());
+//                                }
+//                            } else if (value != null) {
+//                                put(prop, value);
+//                            }
+//                        }
+
+                        final boolean randomColor = randomColorByTitle();
+                        if (randomColor) {
+                            final String digest = StringUtil.md5(title);
+                            final String color = digest.substring(0, 6);
+
+                            put("color", "#" + color);
+                        }
+                    }});
+                } catch (JSONException tes) {
+                    LogUtil.error(getClassName(), tes, tes.getMessage());
                 }
-                events.put(event);
-            } catch (JSONException tes) {
-                LogUtil.error(getClassName(), tes, tes.getMessage());
             }
-        }
-        return events;
+        }};
     }
 
     protected JSONArray getTimelineData(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu, int page) {
@@ -272,64 +304,112 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         LogUtil.info(getClassName(), "early [" + early + "] late [" + late + "]");
         final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
         final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
-        final Map<String, String>[] dataListMapping = userviewMenu.getPropertyGrid("dataListMapping");
+//        final Map<String, String>[] dataListMapping = userviewMenu.getPropertyGrid("dataListMapping");
+
+        final String fieldId = userviewMenu.getPropertyString("dataListMapId");
+        final String fieldTitle = userviewMenu.getPropertyString("dataListMapTitle");
+        final String fieldStart = userviewMenu.getPropertyString("dataListMapDateStart");
+        final String fieldEnd = userviewMenu.getPropertyString("dataListMapDateEnd");
+        final String fieldTimelineRow = userviewMenu.getPropertyString("dataListMapTimelineRow");
 
         return new JSONArray() {{
             for (Map<String, Object> map : dataListCollection) {
                 try {
                     final JSONObject jsonRow = new JSONObject() {{
-                        for (Map<String, String> propmapping : dataListMapping) {
-                            final String field = propmapping.get("field");
-                            final String prop = propmapping.get("prop");
-                            final String value = String.valueOf(map.get(field));
+                        final String recordId = String.valueOf(map.get(fieldId));
+                        put("recordID", recordId);
 
-                            if (value == null) continue;
-
-                            switch (prop) {
-                                case "start":
-                                    try {
-                                        final Date dtListDate = dateValue.parse(value);
-                                        if (dtListDate.before(late)) {
-                                            final String finalDate;
-                                            if (dtListDate.before(early)) {
-                                                finalDate = dateTime.format(early);
-                                            } else {
-                                                finalDate = dateTime.format(dtListDate);
-                                            }
-                                            put(prop, finalDate);
-                                        }
-                                    } catch (ParseException e) {
-                                        LogUtil.error(getClassName(), e, e.getLocalizedMessage());
-                                    }
-                                    break;
-                                case "end":
-                                    try {
-                                        final Date dtListDate = dateValue.parse(value);
-                                        if (dtListDate.after(early)) {
-                                            final String finalDate;
-                                            if (dtListDate.after(late)) {
-                                                finalDate = dateTime.format(late);
-                                            } else {
-                                                finalDate = dateTime.format(dtListDate);
-                                            }
-                                            put(prop, finalDate);
-                                        }
-
-                                    } catch (ParseException e) {
-                                        LogUtil.error(getClassName(), e, e.getLocalizedMessage());
-                                    }
-                                    break;
-                                case "title":
-                                    put("row", value);
-                                    break;
-                                case "id":
-                                    put("recordID", value);
-                                    break;
-                                default:
-                                    put(prop, value);
-                                    break;
+                        try {
+                            final String startDate = String.valueOf(map.get(fieldStart));
+                            final Date dtListDate = dateValue.parse(startDate);
+                            if (dtListDate.before(late)) {
+                                final String finalDate;
+                                if (dtListDate.before(early)) {
+                                    finalDate = dateTime.format(early);
+                                } else {
+                                    finalDate = dateTime.format(dtListDate);
+                                }
+                                put("start", finalDate);
                             }
+                        } catch (ParseException e) {
+                            LogUtil.error(getClassName(), e, e.getLocalizedMessage());
                         }
+
+                        try {
+                            final String endDate = String.valueOf(map.get(fieldEnd));
+                            final Date dtListDate = dateValue.parse(endDate);
+                            if (dtListDate.after(early)) {
+                                final String finalDate;
+                                if (dtListDate.after(late)) {
+                                    finalDate = dateTime.format(late);
+                                } else {
+                                    finalDate = dateTime.format(dtListDate);
+                                }
+                                put("end", finalDate);
+                            }
+
+                        } catch (ParseException e) {
+                            LogUtil.error(getClassName(), e, e.getLocalizedMessage());
+                        }
+
+                        final String title = String.valueOf(map.get(fieldTitle));
+                        put("tooltip", title);
+
+                        final String row = String.valueOf(map.get(fieldTimelineRow));
+                        put("row", row);
+
+//                        for (Map<String, String> propmapping : dataListMapping) {
+//                            final String field = propmapping.get("field");
+//                            final String prop = propmapping.get("prop");
+//                            final String value = String.valueOf(map.get(field));
+//
+//                            if (value == null) continue;
+//
+//                            switch (prop) {
+//                                case "start":
+//                                    try {
+//                                        final Date dtListDate = dateValue.parse(value);
+//                                        if (dtListDate.before(late)) {
+//                                            final String finalDate;
+//                                            if (dtListDate.before(early)) {
+//                                                finalDate = dateTime.format(early);
+//                                            } else {
+//                                                finalDate = dateTime.format(dtListDate);
+//                                            }
+//                                            put(prop, finalDate);
+//                                        }
+//                                    } catch (ParseException e) {
+//                                        LogUtil.error(getClassName(), e, e.getLocalizedMessage());
+//                                    }
+//                                    break;
+//                                case "end":
+//                                    try {
+//                                        final Date dtListDate = dateValue.parse(value);
+//                                        if (dtListDate.after(early)) {
+//                                            final String finalDate;
+//                                            if (dtListDate.after(late)) {
+//                                                finalDate = dateTime.format(late);
+//                                            } else {
+//                                                finalDate = dateTime.format(dtListDate);
+//                                            }
+//                                            put(prop, finalDate);
+//                                        }
+//
+//                                    } catch (ParseException e) {
+//                                        LogUtil.error(getClassName(), e, e.getLocalizedMessage());
+//                                    }
+//                                    break;
+//                                case "title":
+//                                    put("row", value);
+//                                    break;
+//                                case "id":
+//                                    put("recordID", value);
+//                                    break;
+//                                default:
+//                                    put(prop, value);
+//                                    break;
+//                            }
+//                        }
                     }};
 
                     if (jsonRow.has("start") && jsonRow.has("end")) {
@@ -367,6 +447,8 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             return;
         }
 
+        assert userviewMenu instanceof CalendarMenu;
+
         DataList dataList = getDataList(dataListId);
         DataListCollection<Map<String, Object>> rows = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataList.getRows())
                 .stream()
@@ -386,6 +468,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             final int page = optParameter(request, "page")
                     .map(Try.onFunction(Integer::parseInt, (NumberFormatException ignored) -> 0))
                     .orElse(0);
+
             final JSONArray events = getTimelineData(rows, userviewMenu, page);
 
             response.getWriter().write(events.toString());
@@ -418,6 +501,11 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
     }
 
     protected Collection<VEvent> generateVEvents(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu) {
+        final String fieldId = userviewMenu.getPropertyString("dataListMapId");
+        final String fieldTitle = userviewMenu.getPropertyString("dataListMapTitle");
+        final String fieldStart = userviewMenu.getPropertyString("dataListMapDateStart");
+        final String fieldEnd = userviewMenu.getPropertyString("dataListMapDateEnd");
+
         final Collection<VEvent> vEvents = new ArrayList<>();
         for (final Map<String, Object> map : dataListCollection) {
             try {
@@ -425,30 +513,46 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
 
                 final VEvent event = new VEvent();
-                for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
+                final PropertyList<Property> properties = event.getProperties();
 
-                    final String field = propmapping.get("field");
-                    final String prop = propmapping.get("prop");
-                    final String value = String.valueOf(map.get(field));
-                    if ("null".equalsIgnoreCase(value) || value.isEmpty()) {
-                        continue;
-                    }
+                final String recordId = String.valueOf(map.get(fieldId));
+                properties.add(new Uid(recordId));
 
-                    switch (prop) {
-                        case "id":
-                            event.getProperties().add(new Uid(value));
-                            break;
-                        case "start":
-                            event.getProperties().add(new DtStart(dateTimeVevent.format(dateValue.parse(value))));
-                            break;
-                        case "end":
-                            event.getProperties().add(new DtEnd(dateTimeVevent.format(dateValue.parse(value))));
-                            break;
-                        case "title":
-                            event.getProperties().add(new Summary(value));
-                            break;
-                    }
-                }
+                final String title = String.valueOf(map.get(fieldTitle));
+                properties.add(new Summary(title));
+
+                final String startDate = String.valueOf(map.get(fieldStart));
+                final Date dtStartDate = dateValue.parse(startDate);
+                properties.add(new DtStart(dateTimeVevent.format(dtStartDate)));
+
+                final String endDate = String.valueOf(map.get(fieldEnd));
+                final Date dtEndDate = dateValue.parse(endDate);
+                properties.add(new DtEnd(dateTimeVevent.format(dtEndDate)));
+
+//                for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
+//
+//                    final String field = propmapping.get("field");
+//                    final String prop = propmapping.get("prop");
+//                    final String value = String.valueOf(map.get(field));
+//                    if ("null".equalsIgnoreCase(value) || value.isEmpty()) {
+//                        continue;
+//                    }
+//
+//                    switch (prop) {
+//                        case "id":
+//                            event.getProperties().add(new Uid(value));
+//                            break;
+//                        case "start":
+//                            event.getProperties().add(new DtStart(dateTimeVevent.format(dateValue.parse(value))));
+//                            break;
+//                        case "end":
+//                            event.getProperties().add(new DtEnd(dateTimeVevent.format(dateValue.parse(value))));
+//                            break;
+//                        case "title":
+//                            event.getProperties().add(new Summary(value));
+//                            break;
+//                    }
+//                }
 
                 vEvents.add(event);
             } catch (ParseException tes) {
@@ -590,5 +694,25 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), "/templates/CalendarTimelineMenu.ftl", null);
+    }
+
+    public String getDataListMapId() {
+        return getPropertyString("dataListMapId");
+    }
+
+    public String getDataListMapTitle() {
+        return getPropertyString("dataListMapTitle");
+    }
+
+    public String getDataListMapDateStart() {
+        return getPropertyString("dataListMapDateStart");
+    }
+
+    public String getDataListMapDateEnd() {
+        return getPropertyString("dataListMapDateEnd");
+    }
+
+    public String getDataListMapTimelineRow() {
+        return getPropertyString("dataListMapTimelineRow");
     }
 }
