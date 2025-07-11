@@ -7,6 +7,7 @@ import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.property.*;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
 import org.joget.apps.app.dao.FormDefinitionDao;
 import org.joget.apps.app.dao.UserviewDefinitionDao;
@@ -48,6 +49,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -230,23 +232,21 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         final String title = String.valueOf(map.get(fieldTitle));
                         put("title", title);
 
-                        try {
-                            final String value = String.valueOf(map.get(fieldStart));
-                            final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
-                            String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
-                            put("start", finalDate);
-                        } catch (ParseException e) {
-                            LogUtil.error(getClassName(), e, e.getLocalizedMessage());
-                        }
+                        final String startDate = Optional.of(fieldStart)
+                                .map(map::get)
+                                .map(String::valueOf)
+                                .map(Try.onFunction(dateValue::parse))
+                                .map(dateTime::format)
+                                .orElse("");
+                        put("start", startDate);
 
-                        try {
-                            final String value = String.valueOf(map.get(fieldEnd));
-                            final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
-                            String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
-                            put("end", finalDate);
-                        } catch (ParseException e) {
-                            LogUtil.error(getClassName(), e, e.getLocalizedMessage());
-                        }
+                        final String endDate = Optional.of(fieldEnd)
+                                .map(map::get)
+                                .map(String::valueOf)
+                                .map(Try.onFunction(dateValue::parse))
+                                .map(dateTime::format)
+                                .orElse("");
+                        put("end", endDate);
 
 //                        for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
 //                            String field = propmapping.get("field");
@@ -606,8 +606,12 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .filter(Objects::nonNull)
                 .map(DataListColumn::getName)
                 .filter(Objects::nonNull)
+                .filter(Predicate.not(String::isEmpty))
                 .distinct()
-                .collect(Collectors.toMap(s -> s, s -> formatCell(dataList, row, s)));
+                .map(s -> Pair.of(s, formatCell(dataList, row, s)))
+                .filter(p -> Objects.nonNull(p.getLeft()))
+                .filter(p -> Objects.nonNull(p.getRight()))
+                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
     }
 
     /**
