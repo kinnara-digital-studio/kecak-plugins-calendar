@@ -96,7 +96,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         final User currentUser = workflowUserManager.getCurrentUser();
         final boolean hasPermissionToEdit = optPermission()
                 .map(permission -> {
-                    LogUtil.info(getClassName(), "currentUser [" + currentUser.getId() + "]");
                     permission.setCurrentUser(currentUser);
                     return permission.isAuthorize();
                 })
