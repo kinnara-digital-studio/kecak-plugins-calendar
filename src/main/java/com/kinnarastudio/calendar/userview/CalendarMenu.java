@@ -31,8 +31,10 @@ import org.joget.apps.userview.service.UserviewService;
 import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
 import org.joget.commons.util.StringUtil;
+import org.joget.directory.model.User;
 import org.joget.plugin.base.PluginManager;
 import org.joget.plugin.base.PluginWebSupport;
+import org.joget.workflow.model.service.WorkflowUserManager;
 import org.joget.workflow.util.WorkflowUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -87,11 +89,17 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
         ApplicationContext appContext = AppUtil.getApplicationContext();
         PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
+        WorkflowUserManager workflowUserManager = (WorkflowUserManager) appContext.getBean("workflowUserManager");
 
         final Map<String, Object> dataModel = new HashMap<>();
 
+        final User currentUser = workflowUserManager.getCurrentUser();
         final boolean hasPermissionToEdit = optPermission()
-                .map(UserviewPermission::isAuthorize)
+                .map(permission -> {
+                    LogUtil.info(getClassName(), "currentUser [" + currentUser.getId() + "]");
+                    permission.setCurrentUser(currentUser);
+                    return permission.isAuthorize();
+                })
                 .orElse(false);
 
         dataModel.put("className", getClassName());
@@ -235,6 +243,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         final String startDate = Optional.of(fieldStart)
                                 .map(map::get)
                                 .map(String::valueOf)
+                                .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
                                 .map(Try.onFunction(dateValue::parse))
                                 .map(dateTime::format)
                                 .orElse("");
@@ -243,6 +252,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         final String endDate = Optional.of(fieldEnd)
                                 .map(map::get)
                                 .map(String::valueOf)
+                                .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
                                 .map(Try.onFunction(dateValue::parse))
                                 .map(dateTime::format)
                                 .orElse("");
@@ -661,9 +671,14 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
     protected String getTimelineRenderPage(Map<String, Object> dataModel) {
         ApplicationContext appContext = AppUtil.getApplicationContext();
         PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
+        WorkflowUserManager workflowUserManager = (WorkflowUserManager) appContext.getBean("workflowUserManager");
 
+        final User currentUser = workflowUserManager.getCurrentUser();
         final boolean hasPermissionToEdit = optPermission()
-                .map(UserviewPermission::isAuthorize)
+                .map(permission -> {
+                    permission.setCurrentUser(currentUser);
+                    return permission.isAuthorize();
+                })
                 .orElse(false);
 
         dataModel.put("className", getClassName());
