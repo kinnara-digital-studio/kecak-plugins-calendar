@@ -1,0 +1,200 @@
+*{
+  box-sizing:border-box;
+}
+
+.event_item{
+  /* margin: 18px 0; */
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.event_item_dot,.event_item_title{
+  display:inline-block;
+}
+
+.event_item_dot{
+  margin-top: 6px;
+  border-radius:50%;
+  width:7px;
+  height: 7px;
+  background-color: #fafafa;
+  box-shadow: 0px 0px 52px -18px rgba(0, 0, 0, 0.75);
+}
+
+.event_item_title{
+  font-size:15px;
+  color:#fff;
+}
+
+.event_item_time{
+  opacity: 0.7;
+}
+
+.fc-daygrid-day-frame:hover{
+    cursor: pointer !important;
+}
+/* Background overlay */
+.popup-event-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+/* Popup box */
+.popup-event-box {
+  background: linear-gradient(-222deg, #646464, #454545);
+  color: #fff;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 18px;
+  padding: 20px;
+  position: relative;
+}
+
+/* Header */
+.popup-event-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.popup-event-title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* Card */
+.popup-event-card {
+  background: #dfeaff;
+  color: #000;
+  padding: 20px;
+  border-radius: 18px;
+}
+
+.popup-event-card h2 {
+  margin: 0 0 10px;
+}
+
+.event-time-row {
+  margin: 4px 0;
+}
+
+/* Section title */
+.section-event-title {
+  font-size: 18px;
+  margin-top: 25px;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+/* Section text */
+.section-event-text {
+  font-size: 16px;
+  color: #cfcfcf;
+}
+
+/* Description */
+.description-event-box {
+  background: transparent;
+  white-space: pre-wrap;
+  margin-top: 10px;
+  line-height: 1.4;
+  color: #fff;
+}
+
+/* Close X button */
+.close-event-btn {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  font-size: 26px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.event_item_info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Button container aligned right */
+.event_item_actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+}
+
+/* Buttons */
+.event_btn_edit,
+.event_btn_delete {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.event_btn_edit {
+    background: #4285F4;
+    color: white;
+}
+.event_btn_delete {
+    background: #EA4335;
+    color: white;
+}
+
+.event_btn_edit:hover,
+.event_btn_delete:hover {
+    opacity: 1;
+}
+
+.popup-event-btn-row {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+}
+
+.event-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: 0.2s;
+}
+
+.edit-btn {
+    background: #2196f3;
+    color: white;
+}
+
+.edit-btn:hover {
+    background: #0b7dda;
+}
+
+.delete-btn {
+    background: #f44336;
+    color: white;
+}
+
+.delete-btn:hover {
+    background: #d32f2f;
+}
+
+.fc-disabled-date {
+    opacity: 1 !important;
+}
+.fc-disabled-date:hover {
+    background: none !important;
+}

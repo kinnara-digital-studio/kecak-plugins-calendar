@@ -1,0 +1,260 @@
+@import url('https://fonts.cdnfonts.com/css/google-sans');
+
+.userview-breadcrumb,
+.breadcrumb,
+.page-title,
+.app-breadcrumb {
+    display: none !important;
+}
+
+/* Hilangkan scroll dari halaman */
+body, html {
+    height: 100%;
+    overflow: hidden !important;
+}
+
+/* Container utama konten Joget biasanya class .page-body atau .content-wrapper
+   Jika nama beda, beri tahu saya nanti saya sesuaikan */
+.page-body, .content-wrapper {
+    height: calc(100vh - 70px) !important; /* topbar biru Anda ±70px */
+    overflow: hidden;
+}
+
+.fc-header-toolbar {
+    margin-top: -9px !important;
+}
+
+/* Pastikan calendar mengambil seluruh tinggi area konten */
+#calendar {
+    margin-top: -10px !important;
+    height: calc(100vh - 120px) !important;
+    /* 120px = topbar 70px + toolbar calendar 50px */
+}
+
+.fc, .fc * {
+  font-family: 'Product Sans', sans-serif !important;
+}
+
+/* Calendar Area Rounded */
+#calendar .fc-scrollgrid {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* Color Border Grid Soft */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 0.3px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Hover Date */
+.fc-daygrid-day:hover {
+  background-color: #f8f9fa;
+  cursor: pointer;
+}
+
+.fc-daygrid-event {
+  border-radius: 5px !important;
+}
+
+.fc-daygrid-day {
+  cursor: pointer;
+}
+
+/* Header toolbar */
+.fc .fc-toolbar-title {
+  margin-top: -15px !important;
+}
+
+.fc-toolbar {
+  margin-bottom: 20px !important;
+  position: relative !important;
+  padding: 0 40px;
+}
+
+.fc-toolbar-title {
+  font-size: 22px !important;
+  font-weight: 500;
+  color: #202124;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+.fc-toolbar-chunk:first-child {
+    min-width: 350px;
+}
+
+.fc-button {
+  background: #f1f3f4 !important;
+  color: #202124 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 6px 14px !important;
+  margin: 2px !important;
+}
+
+.fc-button:hover {
+  background: #e8eaed !important;
+}
+
+/* Today Highlight */
+.fc-day-today {
+  background: #e8f0fe !important;
+  border-left: 2px solid #1a73e8 !important;
+  border-right: 2px solid #1a73e8 !important;
+}
+
+.fc-daygrid-day-frame {
+  padding: 14px !important;
+}
+
+.fc-daygrid-event-dot {
+  border-color: rgb(75, 153, 210) !important;
+  background-color: #1a73e8 !important;
+}
+
+.fc-event-title,
+.fc-daygrid-dot-event .fc-event-time {
+    font-size: 12px !important;
+    color: #202124 !important;
+}
+
+.fc-col-header-cell.fc-day-sun,
+.fc-col-header-cell.fc-day-sat {
+    background: red !important;
+}
+
+.fc-col-header-cell.fc-day-mon,
+.fc-col-header-cell.fc-day-tue,
+.fc-col-header-cell.fc-day-wed,
+.fc-col-header-cell.fc-day-thu,
+.fc-col-header-cell.fc-day-fri {
+    background: white !important;
+}
+
+.fc-prev-button .fc-icon::before {
+    content: '\2039'; /* ‹ */
+    font-family: Arial, sans-serif !important;
+}
+
+.fc-next-button .fc-icon::before {
+    content: '\203A'; /* › */
+    font-family: Arial, sans-serif !important;
+}
+
+.fc-event-main-frame .fc-event-time,
+.fc-event-title-container .fc-event-title.fc-sticky {
+    color: white !important;
+    text-shadow:
+        1px 1px 0 #454545,
+        -1px 1px 0 #454545,
+        1px -1px 0 #454545,
+        -1px -1px 0 #454545;
+    padding-left: 5px !important;
+}
+
+.fc-daygrid-day-number {
+    font-size: 12px !important;
+    font-weight: bold !important;
+    -webkit-text-stroke: 0.05px white;      /* outline putih */
+    text-shadow:
+        1px 1px 0 white,
+        -1px 1px 0 white,
+        1px -1px 0 white,
+        -1px -1px 0 white;               /* fallback untuk browser non-webkit */
+}
+
+/* Change Day name Word color Sat & Sun */
+.fc-day-sat .fc-col-header-cell-cushion,
+.fc-day-sun .fc-col-header-cell-cushion {
+    color: white !important;
+}
+
+/* Change Day name Word color */
+.fc-day-mon .fc-col-header-cell-cushion,
+.fc-day-tue .fc-col-header-cell-cushion,
+.fc-day-wed .fc-col-header-cell-cushion,
+.fc-day-thu .fc-col-header-cell-cushion,
+.fc-day-fri .fc-col-header-cell-cushion {
+    color: black !important;
+}
+
+.fc-col-header-cell-cushion {
+    font-size: 12px !important;
+    padding: 6px 4px !important;
+    font-weight: 500;
+}
+
+.fc-h-event .fc-event-time {
+    padding-left: 7px !important;
+}
+
+.fc-view-select {
+    background: #f1f3f4 !important;
+    color: #202124 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 6px 14px !important;
+    margin: 2px !important;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='black' viewBox='0 0 16 16'%3E%3Cpath d='M3.204 5h9.592L8 10.481 3.204 5z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 14px !important;
+    min-width: 110px;
+    box-shadow: 0 1px 1.5px 1px rgba(0,0,0,.12) !important;
+    height: auto !important;
+}
+
+.fc-view-select:hover {
+    background: #e8eaed !important;
+    border-color: #888;
+}
+
+.fc-myMenuButton-button {
+    position: relative;
+    font-size: 0 !important; /* hide text */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    line-height: 21px !important;
+    padding: 6px 16px !important;
+    margin-left: -36px !important;
+}
+
+/* Show SVG Button on the left button */
+.fc-myMenuButton-button::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='18' height='18'><circle cx='5' cy='5' r='1.6' fill='%23000'/><circle cx='12' cy='5' r='1.6' fill='%23000'/><circle cx='19' cy='5' r='1.6' fill='%23000'/><circle cx='5' cy='12' r='1.6' fill='%23000'/><circle cx='12' cy='12' r='1.6' fill='%23000'/><circle cx='19' cy='12' r='1.6' fill='%23000'/><circle cx='5' cy='19' r='1.6' fill='%23000'/><circle cx='12' cy='19' r='1.6' fill='%23000'/><circle cx='19' cy='19' r='1.6' fill='%23000'/></svg>");
+    background-size: 18px 18px;
+    background-repeat: no-repeat;
+}
+
+/* Style dropdown */
+.calendar-menu-dropdown {
+    position: absolute;
+    background: white;
+    border-radius: 8px;
+    padding: 6px 0;
+    width: 140px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 99999;
+}
+
+.calendar-menu-dropdown .menu-item {
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+.calendar-menu-dropdown .menu-item:hover {
+    background: #f3f3f3;
+}
+

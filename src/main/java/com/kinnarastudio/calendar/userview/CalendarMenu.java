@@ -1,5 +1,6 @@
 package com.kinnarastudio.calendar.userview;
 
+import com.kinnarastudio.calendar.service.GoogleCalendarService;
 import com.kinnarastudio.commons.Try;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.Property;
@@ -7,6 +8,7 @@ import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.property.*;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
 import org.joget.apps.app.dao.FormDefinitionDao;
@@ -21,6 +23,7 @@ import org.joget.apps.datalist.model.DataListBinder;
 import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.apps.datalist.model.DataListColumn;
 import org.joget.apps.datalist.service.DataListService;
+import org.joget.apps.form.dao.FormDataDao;
 import org.joget.apps.form.model.Form;
 import org.joget.apps.form.service.FormService;
 import org.joget.apps.form.service.FormUtil;
@@ -79,12 +82,16 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .map("timeline"::equalsIgnoreCase)
                 .orElse(false);
 
-
         final String template;
         if (isTimelineView) {
             template = "/templates/CalendarTimelineMenu.ftl";
         } else {
-            template = "/templates/CalendarMenu.ftl";
+            final String isV2 = getPropertyString("versionTwo");
+            if ("true".equals(isV2)) {
+                template = "/templates/CalendarMenu-v2.ftl";
+            }else {
+                template = "/templates/CalendarMenu.ftl";
+            }
         }
 
         ApplicationContext appContext = AppUtil.getApplicationContext();
@@ -134,6 +141,14 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         final String customId = getUserview().getCurrent().getPropertyString("customId");
         if (customId != null && !customId.isEmpty()) {
             dataModel.put("customId", customId);
+        }
+
+        /* Activate Calendar Holiday */
+        final String calendarHoliday = getPropertyString("calendarHolidayId");
+        if (StringUtils.isNotBlank(calendarHoliday)){
+            dataModel.put("activateCalendarHoliday", true);
+        }else {
+            dataModel.put("activateCalendarHoliday", false);
         }
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), template, null);
@@ -204,6 +219,28 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         return dataList;
     }
 
+
+    protected void deleteEventCalendar(String formDefId, String id) {
+        LogUtil.info("Delete - FormId: ", formDefId);
+        LogUtil.info("Delete - Event ID: ", id);
+        ApplicationContext appContext = AppUtil.getApplicationContext();
+        FormService formService = (FormService) appContext.getBean("formService");
+        FormDefinitionDao formDefinitionDao = (FormDefinitionDao) appContext.getBean("formDefinitionDao");
+        AppDefinition appDef = AppUtil.getCurrentAppDefinition();
+        Optional<Object> form = Optional.of(formDefId)
+                .map(s -> formDefinitionDao.loadById(s, appDef))
+                .map(FormDefinition::getJson)
+                .map(formService::createElementFromJson)
+                .map(e -> (Form) e);
+        LogUtil.info("Delete - Form is Present: ", String.valueOf(form.isPresent()));
+        if(form.isPresent()){
+            FormDataDao formDataDao = (FormDataDao) appContext.getBean("formDataDao");
+            String[] ids = {id};
+            formDataDao.delete((Form) form.get(), ids);
+        }
+
+    }
+
     protected JSONObject getJsonForm(String formDefId, boolean readonly) {
         ApplicationContext appContext = AppUtil.getApplicationContext();
         FormService formService = (FormService) appContext.getBean("formService");
@@ -256,6 +293,8 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                                 .map(dateTime::format)
                                 .orElse("");
                         put("end", endDate);
+
+                        put("isPublicCalendar", false);
 
 //                        for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
 //                            String field = propmapping.get("field");
@@ -467,7 +506,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .map(row -> formatRow(dataList, row))
                 .collect(Collectors.toCollection(DataListCollection::new));
 
-
         final String action = getParameter(request, "action");
         if ("event".equals(action)) {
             final JSONArray events = generateEvents(rows, userviewMenu);
@@ -481,6 +519,21 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             final JSONArray events = getTimelineData(rows, userviewMenu, page);
 
             response.getWriter().write(events.toString());
+        } else if ("holidayEvent".equals(action)) {
+            JSONArray holidayEvents = new JSONArray();
+            final String calendarHolidayId = userviewMenu.getPropertyString("calendarHolidayId");
+            if (StringUtils.isNotBlank(calendarHolidayId)){
+                String startDate = getParameter(request, "start");
+                String endDate = getParameter(request, "end");
+                final String serviceAccountJson = userviewMenu.getPropertyString("serviceAccountJson");
+                try {
+                    holidayEvents = GoogleCalendarService.getGoogleEvents(startDate, endDate, calendarHolidayId, serviceAccountJson);
+                } catch (Exception e) {
+                    LogUtil.error("CalendarMenu - Fetch Holiday Calendar", e, e.getMessage());
+                }
+            }
+            response.getWriter().write(holidayEvents.toString());
+
         } else if ("ical".equals(action)) {
             net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
             calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
@@ -495,6 +548,10 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
             final ServletOutputStream outputStream = response.getOutputStream();
             outputter.output(calendar, outputStream);
+        } else if ("delete".equals(action)) {
+            String id = request.getParameter("id");
+            String formDefId = request.getParameter("formId");
+            this.deleteEventCalendar(formDefId, id);
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid parameter action [" + action + "]");
         }

@@ -93,6 +93,37 @@
         ]
       },
       {
+        "name": "versionTwo",
+        "label": "Using V2 View?",
+        "type": "checkbox",
+        "options": [
+          {
+            "value": "true",
+            "label": ""
+          }
+        ]
+      },
+      {
+        "type": "header",
+        "label": "Google Service"
+      },
+      {
+        "name": "calendarHolidayId",
+        "label": "Using Calendar Holiday",
+        "type": "checkbox",
+        "options": [
+          {
+            "value": "id.indonesian#holiday@group.v.calendar.google.com",
+            "label": ""
+          }
+        ]
+      },
+      {
+        "name" : "serviceAccountJson",
+        "label": "Service Account JSON",
+        "type" : "codeeditor"
+      },
+      {
         "type": "header",
         "label": "Permission"
       },
