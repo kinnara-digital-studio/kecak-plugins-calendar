@@ -3,6 +3,7 @@ package com.kinnarastudio.calendar.datalist;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.kinnarastudio.calendar.service.GoogleCalendarService;
+import com.kinnarastudio.calendar.utility.CacheUtil;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.*;
 import org.joget.commons.util.LogUtil;
@@ -48,11 +49,18 @@ public class GoogleCalendarDatalistBinder extends DataListBinderDefault {
             String calendarId = getPropertyString("calendarId");
             String serviceAccountJson = getPropertyString("serviceAccountJson");
 
+            /** Generate cachekey and get data from cache first (if exist) */
+            final String cacheKey = CacheUtil.getCacheKey(this.getClass(), calendarId, startParam, endParam);
+            final DataListCollection cached = (DataListCollection) CacheUtil.getCached(cacheKey);
+            if (cached != null && cached.size() > 1) {
+                LogUtil.info(getClassName(), "Cache hit for key " + cacheKey);
+                return cached;
+            }
+
             /** ======== CONNECT TO GOOGLE CALENDAR ======== */
             Calendar calendar = GoogleCalendarService.build(serviceAccountJson);
 
             List<Event> events = GoogleCalendarService.listGoogleEvents(calendar, calendarId, startParam, endParam, 250);
-            LogUtil.info("GoogleCalendarDatalistBinder - Event", String.valueOf(events.stream().count()));
             DataListCollection rows = new DataListCollection();
 
             if (events.stream().count()  > 0) {
@@ -78,6 +86,8 @@ public class GoogleCalendarDatalistBinder extends DataListBinderDefault {
                     rows.add(row);
                 }
             }
+            /** Put data to cache */
+            CacheUtil.putCache(cacheKey, rows);
 
             return rows;
         } catch (Exception e) {

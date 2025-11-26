@@ -267,7 +267,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 final String startDate = Optional.of(fieldStart)
                         .map(map::get)
                         .map(String::valueOf)
-                        .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
+                        //.map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
                         .map(Try.onFunction(dateValue::parse))
                         .map(dateTime::format)
                         .orElse("");
@@ -276,7 +276,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 final String endDate = Optional.of(fieldEnd)
                         .map(map::get)
                         .map(String::valueOf)
-                        .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
+                        //.map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
                         .map(Try.onFunction(dateValue::parse))
                         .map(dateTime::format)
                         .orElse("");
@@ -327,7 +327,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                     final String color = digest.substring(0, 6);
                     o.put("color", "#" + color);
                 }
-                LogUtil.info("DATALIST GC: ", o.toString());
                 /* Add event to array */
                 arr.put(o);
             } catch (JSONException tes) {

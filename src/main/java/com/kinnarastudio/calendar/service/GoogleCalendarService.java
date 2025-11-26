@@ -63,7 +63,6 @@ public class GoogleCalendarService {
                     .setPageToken(holidayToken)
                     .execute();
 
-            LogUtil.info("Holiday Event List: ", holidayEvents.getItems().toString());
             if (holidayEvents.getItems() != null) {
                 allEvents.addAll(holidayEvents.getItems());
             }
