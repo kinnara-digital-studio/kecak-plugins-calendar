@@ -75,6 +75,17 @@
         "label": "Timeline-Row Field",
         "type" : "textfield",
         "required": "true"
+      },
+      {
+        "label": "Google Calendar Service",
+        "type": "header"
+      },
+      {
+        "name" : "dataListGoogleCalendarId",
+        "label": "DataList Google Calendar",
+        "type" : "selectbox",
+        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options",
+        "required": "false"
       }
     ]
   },
@@ -102,26 +113,6 @@
             "label": ""
           }
         ]
-      },
-      {
-        "type": "header",
-        "label": "Google Service"
-      },
-      {
-        "name": "calendarHolidayId",
-        "label": "Using Calendar Holiday",
-        "type": "checkbox",
-        "options": [
-          {
-            "value": "id.indonesian#holiday@group.v.calendar.google.com",
-            "label": ""
-          }
-        ]
-      },
-      {
-        "name" : "serviceAccountJson",
-        "label": "Service Account JSON",
-        "type" : "codeeditor"
       },
       {
         "type": "header",

@@ -47,7 +47,7 @@
 
         function deleteEvent(id){
             $.get(
-                '${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=delete&formId=${formDefId}&id='+id,
+                '${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service',
                  {
                     datalistId: '${dataListId}',
                     userviewId: '${userviewId}',
@@ -183,45 +183,23 @@
                 navLinks: false,
                 events: function(fetchInfo, successCallback, failureCallback){
                     showLoading();
-                    // Request 1 (Main Event)
-                    let mainEvent = $.get(
-                        '${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=event'
-                    );
+                    // Request Main Event
+                    $.get(
+                        '${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service',
+                        {
+                            datalistId: '${dataListId}',
+                            userviewId: '${userviewId}',
+                            menuId: '${menuId}',
+                            action: 'event',
+                            start: fetchInfo.startStr,
+                            end: fetchInfo.endStr
+                        },
+                        function(data, status){
+                            successCallback(data);
+                        }).always(function() {
+                             hideLoading();
+                        });
 
-                    // Request 2 (Holiday Event) If Enable
-                    const enableCalHoliday = ${activateCalendarHoliday?string};
-                    let holidayEvent = null;
-                    if (enableCalHoliday) {
-                        holidayEvent = $.get(
-                            '${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service',
-                            {
-                                datalistId: '${dataListId}',
-                                userviewId: '${userviewId}',
-                                menuId: '${menuId}',
-                                action: 'holidayEvent',
-                                start: fetchInfo.startStr,
-                                end: fetchInfo.endStr
-                            }
-                        );
-                    }
-
-                    // Join All Request
-                    $.when(mainEvent, holidayEvent).done(function(r1, r2) {
-                        let events = [];
-                        // r1 Format: [data, status, xhr]
-                        if (r1) {
-                            events = events.concat(r1[0]);
-                        }
-
-                        if (enableCalHoliday && r2) {
-                            events = events.concat(r2[0]);
-                        }
-
-                        successCallback(events);
-
-                    }).always(function() {
-                        hideLoading();
-                    });
                 },
                 dateClick:  function(info) {
                     const clickedDate = info.dateStr;

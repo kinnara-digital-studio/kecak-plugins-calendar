@@ -1,0 +1,19 @@
+[
+  {
+    "title": "Google Authorization",
+    "properties": [
+      {
+        "name": "calendarId",
+        "type": "textfield",
+        "label": "Calendar ID",
+        "required": "true"
+      },
+      {
+        "name" : "serviceAccountJson",
+        "type" : "codeeditor",
+        "label": "Service Account JSON",
+        "required": "true"
+      }
+    ]
+  }
+]

@@ -1,6 +1,5 @@
 package com.kinnarastudio.calendar.userview;
 
-import com.kinnarastudio.calendar.service.GoogleCalendarService;
 import com.kinnarastudio.commons.Try;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.Property;
@@ -142,15 +141,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         if (customId != null && !customId.isEmpty()) {
             dataModel.put("customId", customId);
         }
-
-        /* Activate Calendar Holiday */
-        final String calendarHoliday = getPropertyString("calendarHolidayId");
-        if (StringUtils.isNotBlank(calendarHoliday)){
-            dataModel.put("activateCalendarHoliday", true);
-        }else {
-            dataModel.put("activateCalendarHoliday", false);
-        }
-
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), template, null);
     }
 
@@ -221,8 +211,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
 
     protected void deleteEventCalendar(String formDefId, String id) {
-        LogUtil.info("Delete - FormId: ", formDefId);
-        LogUtil.info("Delete - Event ID: ", id);
         ApplicationContext appContext = AppUtil.getApplicationContext();
         FormService formService = (FormService) appContext.getBean("formService");
         FormDefinitionDao formDefinitionDao = (FormDefinitionDao) appContext.getBean("formDefinitionDao");
@@ -232,13 +220,11 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .map(FormDefinition::getJson)
                 .map(formService::createElementFromJson)
                 .map(e -> (Form) e);
-        LogUtil.info("Delete - Form is Present: ", String.valueOf(form.isPresent()));
         if(form.isPresent()){
             FormDataDao formDataDao = (FormDataDao) appContext.getBean("formDataDao");
             String[] ids = {id};
             formDataDao.delete((Form) form.get(), ids);
         }
-
     }
 
     protected JSONObject getJsonForm(String formDefId, boolean readonly) {
@@ -255,6 +241,100 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .map(formService::generateElementJson)
                 .map(Try.onFunction(JSONObject::new))
                 .orElseGet(JSONObject::new);
+    }
+
+    protected JSONArray generateCalendarEvents(DataListCollection<Map<String, Object>> dataListCollectionLocal, DataListCollection<Map<String, Object>> dataListGoogleCalendar, UserviewMenu userviewMenu) {
+        JSONArray arr = new JSONArray();
+
+        /* Source Datalist From Form */
+        final String fieldId = userviewMenu.getPropertyString("dataListMapId");
+        final String fieldTitle = userviewMenu.getPropertyString("dataListMapTitle");
+        final String fieldStart = userviewMenu.getPropertyString("dataListMapDateStart");
+        final String fieldEnd = userviewMenu.getPropertyString("dataListMapDateEnd");
+
+        final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
+        final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+
+        for (Map<String, Object> map : dataListCollectionLocal) {
+            try {
+                JSONObject o = new JSONObject();
+                final String recordId = String.valueOf(map.get(fieldId));
+                o.put("id", recordId);
+
+                final String title = String.valueOf(map.get(fieldTitle));
+                o.put("title", title);
+
+                final String startDate = Optional.of(fieldStart)
+                        .map(map::get)
+                        .map(String::valueOf)
+                        .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
+                        .map(Try.onFunction(dateValue::parse))
+                        .map(dateTime::format)
+                        .orElse("");
+                o.put("start", startDate);
+
+                final String endDate = Optional.of(fieldEnd)
+                        .map(map::get)
+                        .map(String::valueOf)
+                        .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
+                        .map(Try.onFunction(dateValue::parse))
+                        .map(dateTime::format)
+                        .orElse("");
+                o.put("end", endDate);
+
+                o.put("isPublicCalendar", false);
+
+                final boolean randomColor = randomColorByTitle();
+                if (randomColor) {
+                    final String digest = StringUtil.md5(title);
+                    final String color = digest.substring(0, 6);
+                    o.put("color", "#" + color);
+                }
+                /* Add event to array */
+                arr.put(o);
+            } catch (JSONException tes) {
+                LogUtil.error(getClassName(), tes, tes.getMessage());
+            }
+        }
+
+        /* Source Datalist Google Calendar */
+        for (Map<String, Object> map : dataListGoogleCalendar) {
+            try {
+                JSONObject o = new JSONObject();
+                final String recordId = String.valueOf(map.get("id"));
+                o.put("id", recordId);
+
+                final String title = String.valueOf(map.get("title"));
+                o.put("title", title);
+
+                final String start = String.valueOf(map.get("start"));
+                o.put("start", start);
+
+                final String end = String.valueOf(map.get("end"));
+                o.put("end", end);
+
+                final String description = String.valueOf(map.get("description"));
+                o.put("description", description);
+
+                final String location = String.valueOf(map.get("location"));
+                o.put("location", location);
+
+                o.put("isPublicCalendar", true);
+
+                final boolean randomColor = randomColorByTitle();
+                if (randomColor) {
+                    final String digest = StringUtil.md5(title);
+                    final String color = digest.substring(0, 6);
+                    o.put("color", "#" + color);
+                }
+                LogUtil.info("DATALIST GC: ", o.toString());
+                /* Add event to array */
+                arr.put(o);
+            } catch (JSONException tes) {
+                LogUtil.error(getClassName(), tes, tes.getMessage());
+            }
+        }
+        return arr;
     }
 
     protected JSONArray generateEvents(DataListCollection<Map<String, Object>> dataListCollection, UserviewMenu userviewMenu) {
@@ -505,10 +585,24 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 // reformat content value
                 .map(row -> formatRow(dataList, row))
                 .collect(Collectors.toCollection(DataListCollection::new));
-
+        final String dataListGoogleCalendarId = userviewMenu.getPropertyString("dataListGoogleCalendarId");
         final String action = getParameter(request, "action");
         if ("event".equals(action)) {
-            final JSONArray events = generateEvents(rows, userviewMenu);
+            JSONArray events = new JSONArray();
+            if(StringUtils.isBlank(dataListGoogleCalendarId)){
+                events = generateEvents(rows, userviewMenu);
+            }else {
+                DataList dataListGoogleCalendar = getDataList(dataListGoogleCalendarId);
+                DataListCollection<Map<String, Object>> rowsGc = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataListGoogleCalendar.getRows())
+                        .stream()
+                        .flatMap(Collection::stream)
+
+                        // reformat content value
+                        .map(row -> formatRow(dataListGoogleCalendar, row))
+                        .collect(Collectors.toCollection(DataListCollection::new));
+
+                events = generateCalendarEvents(rows, rowsGc, userviewMenu);
+            }
             response.getWriter().write(events.toString());
         } else if ("timeline".equals(action)) {
 //                final JSONArray events = new JSONArray(AppUtil.readPluginResource(getClassName(), "/resources/mock-data.json"));
@@ -519,21 +613,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             final JSONArray events = getTimelineData(rows, userviewMenu, page);
 
             response.getWriter().write(events.toString());
-        } else if ("holidayEvent".equals(action)) {
-            JSONArray holidayEvents = new JSONArray();
-            final String calendarHolidayId = userviewMenu.getPropertyString("calendarHolidayId");
-            if (StringUtils.isNotBlank(calendarHolidayId)){
-                String startDate = getParameter(request, "start");
-                String endDate = getParameter(request, "end");
-                final String serviceAccountJson = userviewMenu.getPropertyString("serviceAccountJson");
-                try {
-                    holidayEvents = GoogleCalendarService.getGoogleEvents(startDate, endDate, calendarHolidayId, serviceAccountJson);
-                } catch (Exception e) {
-                    LogUtil.error("CalendarMenu - Fetch Holiday Calendar", e, e.getMessage());
-                }
-            }
-            response.getWriter().write(holidayEvents.toString());
-
         } else if ("ical".equals(action)) {
             net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
             calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
