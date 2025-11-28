@@ -1,0 +1,64 @@
+
+    {
+        "title" : "Datalist %s",
+        "properties" : [
+            {
+                "label" : "General",
+                "type" : "header"
+            },
+            {
+              "name" : "datalist%s_datalistId",
+              "label": "Datalist",
+              "type" : "selectbox",
+              "required" : "true",
+              "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options"
+            },
+            {
+                "name" : "datalist%s_formId",
+                "label" : "Form",
+                "type" : "selectbox",
+                "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
+            },
+            {
+              "label": "DataList Mapping",
+              "type": "header"
+            },
+            {
+              "name" : "datalist%s_dataListMapId",
+              "label": "ID Field",
+              "type" : "textfield",
+              "value": "id",
+              "required": "true"
+            },
+            {
+              "name" : "datalist%s_dataListMapTitle",
+              "label": "Title Field",
+              "type" : "textfield",
+              "required": "true"
+            },
+            {
+              "name" : "datalist%s_dataListMapDateStart",
+              "label": "Date-Start Field",
+              "type" : "textfield",
+              "required": "true"
+            },
+            {
+              "name" : "datalist%s_dataListMapDateEnd",
+              "label": "Date-End Field",
+              "type" : "textfield",
+              "required": "true"
+            },
+            {
+              "name" : "datalist%s_dataListMapTimelineRow",
+              "label": "Timeline-Row Field",
+              "type" : "textfield",
+              "required": "true"
+            },
+            {
+              "name" : "datalist%s_dataListMapDescription",
+              "label": "Description Field",
+              "type" : "textfield",
+              "value": "description"
+            }
+        ]
+    }

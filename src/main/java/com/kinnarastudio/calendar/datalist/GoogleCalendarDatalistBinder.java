@@ -27,7 +27,8 @@ public class GoogleCalendarDatalistBinder extends DataListBinderDefault {
                 new DataListColumn("start", "Start", true),
                 new DataListColumn("end", "End", true),
                 new DataListColumn("description", "Description", true),
-                new DataListColumn("location", "Location", true)
+                new DataListColumn("location", "Location", true),
+                new DataListColumn("source", "Source", true)
         };
     }
 
@@ -82,6 +83,7 @@ public class GoogleCalendarDatalistBinder extends DataListBinderDefault {
 
                     row.put("location", event.getLocation());
                     row.put("description", event.getDescription());
+                    row.put("source", "google");
 
                     rows.add(row);
                 }

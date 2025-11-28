@@ -45,16 +45,16 @@
             kecakCalendar.refetchEvents();
         }
 
-        function deleteEvent(id){
+        function deleteEvent(data){
             $.get(
                 '${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service',
                  {
-                    datalistId: '${dataListId}',
+                    datalistId: data.datalistId,
                     userviewId: '${userviewId}',
                     menuId: '${menuId}',
                     action: 'delete',
-                    formId: '${formDefId}',
-                    id: id
+                    formId: data.formId,
+                    id: data.id
                  },
                  function(data, status){
                     successCallback(
@@ -66,13 +66,11 @@
                  });
         }
 
-        function editEvent(id){
+        function editEvent(data){
             const popupContainer = document.getElementById("popup-event-container");
             popupContainer.remove();
 
-            var jsonForm = $('input#jsonForm').val() ? JSON.parse($('input#jsonForm').val()) : {};
-            var nonce = '${nonce!}';
-            popupForm('${formDefId}', '${appId}', '${appVersion}', jsonForm, nonce, {}, {id: id}, 370, 900);
+            popupForm(data.formId, '${appId}', '${appVersion}', JSON.parse(data.jsonForm), data.nonce, {}, {id: data.id}, 800, 900);
         }
 
         function toggleMenuDropdown() {
@@ -98,7 +96,6 @@
             menu.style.top = (rect.bottom + 5) + "px";
             menu.style.left = (rect.left - 20) + "px";
 
-            // Close menu ketika klik luar
             document.addEventListener("click", function handler(e) {
                 if (!menu.contains(e.target) && e.target !== btn) {
                     menu.remove();
@@ -154,7 +151,7 @@
                         addButton: {
                             text: 'Add Event',
                             click: function() {
-                                popupForm('${formDefId}', '${appId}', '${appVersion}', jsonForm, nonce, {}, {}, 370, 900);
+                                popupForm('${formDefId}', '${appId}', '${appVersion}', jsonForm, nonce, {}, {}, 800, 900);
                             }
                         },
                     </#if>
@@ -191,6 +188,7 @@
                             userviewId: '${userviewId}',
                             menuId: '${menuId}',
                             action: 'event',
+                            hasPermissionToEdit: '${hasPermissionToEdit?string}',
                             start: fetchInfo.startStr,
                             end: fetchInfo.endStr
                         },
@@ -206,7 +204,7 @@
                     const events = kecakCalendar.getEvents().filter(e =>
                         e.startStr.substring(0,10) === clickedDate
                     );
-                    dayEventsPopup(info, events, ${editable?string});
+                    dayEventsPopup(info, events);
                 },
                 dayCellDidMount: function(info) {
                     const day = info.date.getDay();  // 0=Sunday, 6=Saturday
@@ -231,8 +229,11 @@
                         end: info.event.endStr,
                         location: info.event.extendedProps.location,
                         description: info.event.extendedProps.description,
-                        isPublicCalendar: info.event.extendedProps.isPublicCalendar,
-                        editable: ${editable?string}
+                        isEditable: info.event.extendedProps.isEditable,
+                        jsonForm: info.event.extendedProps.jsonForm,
+                        nonce: info.event.extendedProps.nonce,
+                        formId: info.event.extendedProps.formId,
+                        datalistId: info.event.extendedProps.datalistId
                     });
                 }
 

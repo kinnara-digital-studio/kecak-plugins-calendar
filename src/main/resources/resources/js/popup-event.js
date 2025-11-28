@@ -1,4 +1,4 @@
-function dayEventsPopup(info, events, editable){
+function dayEventsPopup(info, events){
     const containerCalendar = document.getElementById("calendar");
 
     // Container
@@ -96,7 +96,12 @@ function dayEventsPopup(info, events, editable){
             editBtn.className = "event_btn_edit";
             editBtn.textContent = "Edit";
             editBtn.onclick = function() {
-                editEvent(ev.id);
+                editEvent({
+                    id: ev.id,
+                    formId: ev.extendedProps.formId,
+                    jsonForm: ev.extendedProps.jsonForm,
+                    nonce: ev.extendedProps.nonce
+                });
             };
 
             const deleteBtn = document.createElement("button");
@@ -104,7 +109,11 @@ function dayEventsPopup(info, events, editable){
             deleteBtn.textContent = "Delete";
             deleteBtn.onclick = function () {
                 if (confirm(`Delete event "${ev.title}" ?`)) {
-                    deleteEvent(ev.id);
+                    deleteEvent({
+                        id: ev.id,
+                        formId: ev.extendedProps.formId,
+                        datalistId: ev.extendedProps.datalistId
+                    });
                     eventItem.remove();
                 }
             };
@@ -114,7 +123,7 @@ function dayEventsPopup(info, events, editable){
 
             eventItem.appendChild(dot);
             eventItem.appendChild(infoWrap);
-            if(editable && !ev.extendedProps.isPublicCalendar){
+            if(ev.extendedProps.isEditable){
                 eventItem.appendChild(btnWrap);
             }
             eventsContainer.appendChild(eventItem);
@@ -157,6 +166,8 @@ function formatDateTime(stringDate) {
 }
 
 function showEventInfoPopup(data) {
+    debugger;
+    const dat = data;
     const containerCalendar = document.getElementById("calendar");
 
     // Container
@@ -226,7 +237,12 @@ function showEventInfoPopup(data) {
     editBtn.className = "event-btn edit-btn";
     editBtn.innerText = "Edit";
     editBtn.onclick = () => {
-        editEvent(data.id);
+        editEvent({
+            id: data.id,
+            formId: data.formId,
+            jsonForm: data.jsonForm,
+            nonce: data.nonce
+        });
         container.remove();
     };
 
@@ -236,7 +252,11 @@ function showEventInfoPopup(data) {
     deleteBtn.innerText = "Delete";
     deleteBtn.onclick = () => {
         if (confirm("Delete this event?")) {
-            deleteEvent(data.id);
+            deleteEvent({
+                id: data.id,
+                formId: data.formId,
+                datalistId: data.datalistId
+            });
             container.remove();
         }
     };
@@ -248,119 +268,15 @@ function showEventInfoPopup(data) {
     box.appendChild(closeBtn);
     box.appendChild(header);
     box.appendChild(card);
+    box.appendChild(descTitle);
+    box.appendChild(desc);
 
-    if(data.isPublicCalendar){
-        box.appendChild(descTitle);
-        box.appendChild(desc);
-    }
 
-    if(data.editable && !data.isPublicCalendar){
+    if(data.isEditable){
         box.appendChild(btnWrap);
     }
 
     overlay.appendChild(box);
     container.appendChild(overlay);
     containerCalendar.appendChild(container);
-}
-
-function popupFormWithoutJPopup(elementId, appId, appVersion, jsonForm, nonce, args, data, height = "600px", width = "90%") {
-
-    const containerCalendar = document.getElementById("calendar");
-
-    // Hapus popup jika ada
-    const existing = document.getElementById("popup-form-container");
-    if (existing) existing.remove();
-
-    // Container popup
-    const container = document.createElement("div");
-    container.id = "popup-form-container";
-    container.className = "popup-event-overlay";
-
-    // Box popup
-    const box = document.createElement("div");
-    box.className = "popup-event-box";
-    box.style.width = width;
-    box.style.height = height;
-    box.style.maxWidth = "900px";
-    box.style.maxHeight = "90vh";
-    box.style.overflow = "hidden";
-    box.style.position = "relative";
-
-    // Tombol close
-    const closeBtn = document.createElement("span");
-    closeBtn.className = "close-event-btn";
-    closeBtn.innerHTML = "&times;";
-    closeBtn.onclick = () => container.remove();
-
-    // ===============================
-    // BUILD URL
-    // ===============================
-    debugger;
-    let formUrl = '/web/app/' + appId + '/' + appVersion + '/form/embed?_submitButtonLabel=Submit';
-
-    const frameId = args.frameId = "Frame_" + elementId;
-
-    if (data && data.id) {
-        formUrl += (formUrl.includes("?") ? "&" : "?") + "id=" + data.id;
-    } else {
-        formUrl += (formUrl.includes("?") ? "&" : "?") + "_mode=add";
-    }
-
-    if (typeof UI !== "undefined" && UI.userviewThemeParams) {
-        formUrl += UI.userviewThemeParams();
-    }
-
-    // ADD OWASP
-    formUrl += "&" + getOwaspCsrfToken();
-
-    // ===============================
-    // PARAMETER FORM
-    // ===============================
-    const params = {
-        _json: JSON.stringify(jsonForm || {}),
-        _callback: "onSubmitted",
-        _setting: JSON.stringify(args || {}).replace(/"/g, "'"),
-        _jsonrow: JSON.stringify(data || {}),
-        _nonce: nonce
-    };
-
-    // Convert params → hidden form sender
-    const form = document.createElement("form");
-    form.style.display = "none";
-    form.method = "POST";
-    form.target = frameId;
-    form.action = formUrl;
-
-    Object.keys(params).forEach(k => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = k;
-        input.value = params[k];
-        form.appendChild(input);
-    });
-    document.body.appendChild(form);
-    // ===============================
-    // IFRAME
-    // ===============================
-    const iframe = document.createElement("iframe");
-    iframe.id = frameId;
-    iframe.name = frameId;
-    iframe.style.width = "100%";
-    iframe.style.height = "100%";
-    iframe.style.border = "0";
-
-    // Append
-    box.appendChild(closeBtn);
-    box.appendChild(iframe);
-    container.appendChild(box);
-    container.appendChild(form);
-    containerCalendar.appendChild(container);
-
-    // Submit otomatis → load form Joget ke iframe
-    form.submit();
-}
-
-function getOwaspCsrfToken(){
-    let owasp = ConnectionManager.tokenName+"="+ConnectionManager.tokenValue;
-    return owasp;
 }

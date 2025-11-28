@@ -23,69 +23,80 @@
         "value": "My Menu"
       },
       {
-        "name" : "dataListId",
-        "label": "DataList",
-        "type" : "selectbox",
-        "required" : "true",
-        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options"
-      },
-      {
-        "name" : "formId",
-        "label": "Form",
-        "type" : "selectbox",
-        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
+        "name": "numberOfDatalist",
+        "label": "Number Of Datalist",
+        "type": "elementselect",
+        "value": "1",
+        "options": [
+          {
+            "value": "1",
+            "label": "1"
+          },
+          {
+            "value": "2",
+            "label": "2"
+          },
+          {
+            "value": "3",
+            "label": "3"
+          },
+          {
+            "value": "4",
+            "label": "4"
+          },
+          {
+            "value": "5",
+            "label": "5"
+          },
+          {
+            "value": "6",
+            "label": "6"
+          },
+          {
+            "value": "7",
+            "label": "7"
+          },
+          {
+            "value": "8",
+            "label": "8"
+          },
+          {
+            "value": "9",
+            "label": "9"
+          },
+          {
+            "value": "10",
+            "label": "10"
+          },
+          {
+            "value": "11",
+            "label": "11"
+          },
+          {
+            "value": "12",
+            "label": "12"
+          },
+          {
+            "value": "13",
+            "label": "13"
+          },
+          {
+            "value": "14",
+            "label": "14"
+          },
+          {
+            "value": "15",
+            "label": "15"
+          }
+        ],
+        "url": "[CONTEXT_PATH]/web/json/app[APP_PATH]/plugin/com.kinnarastudio.calendar.userview.CalendarMenu/service?action=getJson",
+        "keep_value_on_change": "true"
       },
       {
         "name" : "dateFormat",
-        "label" : "dateFormat",
+        "label" : "Date Format",
         "type" : "textfield",
         "required" : "true"
-      },
-      {
-        "label": "DataList Mapping",
-        "type": "header"
-      },
-      {
-        "name" : "dataListMapId",
-        "label": "ID Field",
-        "type" : "textfield",
-        "value": "id",
-        "required": "true"
-      },
-      {
-        "name" : "dataListMapTitle",
-        "label": "Title Field",
-        "type" : "textfield",
-        "required": "true"
-      },
-      {
-        "name" : "dataListMapDateStart",
-        "label": "Date-Start Field",
-        "type" : "textfield",
-        "required": "true"
-      },
-      {
-        "name" : "dataListMapDateEnd",
-        "label": "Date-End Field",
-        "type" : "textfield",
-        "required": "true"
-      },
-      {
-        "name" : "dataListMapTimelineRow",
-        "label": "Timeline-Row Field",
-        "type" : "textfield",
-        "required": "true"
-      },
-      {
-        "label": "Google Calendar Service",
-        "type": "header"
-      },
-      {
-        "name" : "dataListGoogleCalendarId",
-        "label": "DataList Google Calendar",
-        "type" : "selectbox",
-        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options",
-        "required": "false"
       }
     ]
   },

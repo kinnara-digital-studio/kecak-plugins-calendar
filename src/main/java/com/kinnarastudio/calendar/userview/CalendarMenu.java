@@ -1,6 +1,7 @@
 package com.kinnarastudio.calendar.userview;
 
 import com.kinnarastudio.commons.Try;
+import com.mysql.cj.log.Log;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
@@ -109,14 +110,14 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
         dataModel.put("className", getClassName());
 
-        final String dtId = getPropertyString("dataListId");
+        final String dtId = getDefaultDatalist("_datalistId");
         dataModel.put("dataListId", dtId);
 
         final AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
         dataModel.put("appId", appDefinition.getAppId());
         dataModel.put("appVersion", appDefinition.getVersion());
 
-        final String formDefId = getPropertyString("formId");
+        final String formDefId = getDefaultDatalist("_formId");
         dataModel.put("formDefId", formDefId);
 
         if (formDefId.isEmpty()) {
@@ -141,6 +142,8 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         if (customId != null && !customId.isEmpty()) {
             dataModel.put("customId", customId);
         }
+
+        dataModel.put("hasPermissionToEdit", hasPermissionToEdit);
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), template, null);
     }
 
@@ -241,6 +244,115 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .map(formService::generateElementJson)
                 .map(Try.onFunction(JSONObject::new))
                 .orElseGet(JSONObject::new);
+    }
+
+    protected String getDefaultDatalist(String propertyName) {
+        Map<String, Object> numberOfDatalistObject= (Map<String, Object>) getProperty("numberOfDatalist");
+        Map datalistProperties = (Map) numberOfDatalistObject.get("properties");
+        return (String) datalistProperties.get("datalist" + 1 + propertyName);
+    }
+
+    protected JSONArray generateAllEvents(UserviewMenu userviewMenu, boolean hasPermissionToEdit) {
+        JSONArray arr = new JSONArray();
+        final AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+        Map<String, Object> numberOfDatalistObject= (Map<String, Object>) userviewMenu.getProperty("numberOfDatalist");
+        if (numberOfDatalistObject != null) {
+            int numberOfDatalist = Integer.parseInt(numberOfDatalistObject.get("className").toString());
+            Map datalistProperties = (Map) numberOfDatalistObject.get("properties");
+            for (int datalistCount = 1; datalistCount <= numberOfDatalist; ++datalistCount) {
+                String datalistId = (String) datalistProperties.get("datalist" + datalistCount + "_datalistId");
+                String formId = (String) datalistProperties.get("datalist" + datalistCount + "_formId");
+
+                String fieldId = (String) datalistProperties.get("datalist" + datalistCount + "_dataListMapId");
+                String fieldTitle = (String) datalistProperties.get("datalist" + datalistCount + "_dataListMapTitle");
+                String fieldStart = (String) datalistProperties.get("datalist" + datalistCount + "_dataListMapDateStart");
+                String fieldEnd = (String) datalistProperties.get("datalist" + datalistCount + "_dataListMapDateEnd");
+                String fieldDescription = (String) datalistProperties.get("datalist" + datalistCount + "_dataListMapDescription");
+
+                DataList dataList = getDataList(datalistId);
+                DataListCollection<Map<String, Object>> dataListCollection = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataList.getRows())
+                        .stream()
+                        .flatMap(Collection::stream)
+
+                        // reformat content value
+                        .map(row -> formatRow(dataList, row))
+                        .collect(Collectors.toCollection(DataListCollection::new));
+
+                final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
+                final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+                for (Map<String, Object> map : dataListCollection) {
+                    try {
+                        JSONObject o = new JSONObject();
+                        o.put("datalistId", datalistId);
+
+                        o.put("formId", formId);
+
+                        final JSONObject jsonForm = getJsonForm(formId, !hasPermissionToEdit);
+                        o.put("jsonForm", jsonForm.toString());
+
+                        final String nonce = generateNonce(appDefinition, jsonForm.toString());
+                        o.put("nonce", nonce);
+
+                        final String recordId = String.valueOf(map.get(fieldId));
+                        o.put("id", recordId);
+
+                        final String title = String.valueOf(map.get(fieldTitle));
+                        o.put("title", title);
+
+                        final String source = String.valueOf(map.get("source"));
+                        if ("google".equals(source)){
+                            final String start = String.valueOf(map.get(fieldStart));
+                            o.put("start", start);
+
+                            final String end = String.valueOf(map.get(fieldEnd));
+                            o.put("end", end);
+                        }else {
+                            final String startDate = Optional.of(fieldStart)
+                                    .map(map::get)
+                                    .map(String::valueOf)
+//                                .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
+                                    .map(Try.onFunction(dateValue::parse))
+                                    .map(dateTime::format)
+                                    .orElse("");
+                            o.put("start", startDate);
+
+                            final String endDate = Optional.of(fieldEnd)
+                                    .map(map::get)
+                                    .map(String::valueOf)
+                                    //.map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
+                                    .map(Try.onFunction(dateValue::parse))
+                                    .map(dateTime::format)
+                                    .orElse("");
+                            o.put("end", endDate);
+                        }
+
+                        final String description = String.valueOf(map.get(fieldDescription));
+                        o.put("description", description);
+
+                        if (StringUtils.isNotBlank(formId)){
+                            o.put("isEditable", hasPermissionToEdit);
+                        }else {
+                            o.put("isEditable", false);
+                        }
+
+
+                        final boolean randomColor = randomColorByTitle();
+                        if (randomColor) {
+                            final String digest = StringUtil.md5(title);
+                            final String color = digest.substring(0, 6);
+                            o.put("color", "#" + color);
+                        }
+                        /* Add event to array */
+                        arr.put(o);
+                    } catch (JSONException tes) {
+                        LogUtil.error(getClassName(), tes, tes.getMessage());
+                    }
+                }
+            }
+
+        }
+
+        return arr;
     }
 
     protected JSONArray generateCalendarEvents(DataListCollection<Map<String, Object>> dataListCollectionLocal, DataListCollection<Map<String, Object>> dataListGoogleCalendar, UserviewMenu userviewMenu) {
@@ -563,75 +675,89 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String dataListId = getParameter(request, "datalistId");
-        String userviewId = getParameter(request, "userviewId");
-        String menuId = getParameter(request, "menuId");
-        Userview userview = getUserview(userviewId);
-        UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
-
-        if (userviewMenu == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        assert userviewMenu instanceof CalendarMenu;
-
-        DataList dataList = getDataList(dataListId);
-        DataListCollection<Map<String, Object>> rows = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataList.getRows())
-                .stream()
-                .flatMap(Collection::stream)
-
-                // reformat content value
-                .map(row -> formatRow(dataList, row))
-                .collect(Collectors.toCollection(DataListCollection::new));
-        final String dataListGoogleCalendarId = userviewMenu.getPropertyString("dataListGoogleCalendarId");
         final String action = getParameter(request, "action");
-        if ("event".equals(action)) {
-            JSONArray events = new JSONArray();
-            if(StringUtils.isBlank(dataListGoogleCalendarId)){
-                events = generateEvents(rows, userviewMenu);
-            }else {
-                DataList dataListGoogleCalendar = getDataList(dataListGoogleCalendarId);
-                DataListCollection<Map<String, Object>> rowsGc = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataListGoogleCalendar.getRows())
-                        .stream()
-                        .flatMap(Collection::stream)
-
-                        // reformat content value
-                        .map(row -> formatRow(dataListGoogleCalendar, row))
-                        .collect(Collectors.toCollection(DataListCollection::new));
-
-                events = generateCalendarEvents(rows, rowsGc, userviewMenu);
+        if ("getJson".equals(action)) {
+            String value = request.getParameter("value");
+            int number = Integer.parseInt(value);
+            StringBuilder output = new StringBuilder("[");
+            for (int i = 1; i <= number; ++i) {
+                String pageNumber = Integer.toString(i);
+                Object[] arguments = new String[]{pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber};
+                output.append(AppUtil.readPluginResource(getClass().getName(), "/properties/DatalistChild.json", arguments, true)).append(",");
             }
-            response.getWriter().write(events.toString());
-        } else if ("timeline".equals(action)) {
+            output = new StringBuilder(output.substring(0, output.length() - 1) + "]");
+            response.getWriter().write(output.toString());
+        }else {
+            String dataListId = getParameter(request, "datalistId");
+            String userviewId = getParameter(request, "userviewId");
+            String menuId = getParameter(request, "menuId");
+            Userview userview = getUserview(userviewId);
+            UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
+
+            if (userviewMenu == null) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            assert userviewMenu instanceof CalendarMenu;
+
+            DataList dataList = getDataList(dataListId);
+            DataListCollection<Map<String, Object>> rows = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataList.getRows())
+                    .stream()
+                    .flatMap(Collection::stream)
+
+                    // reformat content value
+                    .map(row -> formatRow(dataList, row))
+                    .collect(Collectors.toCollection(DataListCollection::new));
+
+            if ("event".equals(action)) {
+//                JSONArray events = new JSONArray();
+//                if (StringUtils.isBlank(dataListGoogleCalendarId)) {
+//                    events = generateEvents(rows, userviewMenu);
+//                } else {
+//                    DataList dataListGoogleCalendar = getDataList(dataListGoogleCalendarId);
+//                    DataListCollection<Map<String, Object>> rowsGc = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataListGoogleCalendar.getRows())
+//                            .stream()
+//                            .flatMap(Collection::stream)
+//
+//                            // reformat content value
+//                            .map(row -> formatRow(dataListGoogleCalendar, row))
+//                            .collect(Collectors.toCollection(DataListCollection::new));
+//
+//                    events = generateCalendarEvents(rows, rowsGc, userviewMenu);
+//                }
+                JSONArray events = generateAllEvents(userviewMenu, Boolean.parseBoolean(request.getParameter("hasPermissionToEdit")));
+                response.getWriter().write(events.toString());
+            } else if ("timeline".equals(action)) {
 //                final JSONArray events = new JSONArray(AppUtil.readPluginResource(getClassName(), "/resources/mock-data.json"));
-            final int page = optParameter(request, "page")
-                    .map(Try.onFunction(Integer::parseInt, (NumberFormatException ignored) -> 0))
-                    .orElse(0);
+                final int page = optParameter(request, "page")
+                        .map(Try.onFunction(Integer::parseInt, (NumberFormatException ignored) -> 0))
+                        .orElse(0);
 
-            final JSONArray events = getTimelineData(rows, userviewMenu, page);
+                final JSONArray events = getTimelineData(rows, userviewMenu, page);
 
-            response.getWriter().write(events.toString());
-        } else if ("ical".equals(action)) {
-            net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
-            calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
-            calendar.getProperties().add(net.fortuna.ical4j.model.property.Version.VERSION_2_0);
-            calendar.getProperties().add(CalScale.GREGORIAN);
+                response.getWriter().write(events.toString());
+            } else if ("ical".equals(action)) {
+                net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
+                calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
+                calendar.getProperties().add(net.fortuna.ical4j.model.property.Version.VERSION_2_0);
+                calendar.getProperties().add(CalScale.GREGORIAN);
 
-            final Collection<VEvent> events = generateVEvents(rows, userviewMenu);
-            calendar.getComponents().addAll(events);
+                final Collection<VEvent> events = generateVEvents(rows, userviewMenu);
+                calendar.getComponents().addAll(events);
 
-            final CalendarOutputter outputter = new CalendarOutputter();
-            response.addHeader("Content-Disposition", "attachment; filename=calendar.ics");
+                final CalendarOutputter outputter = new CalendarOutputter();
+                response.addHeader("Content-Disposition", "attachment; filename=calendar.ics");
 
-            final ServletOutputStream outputStream = response.getOutputStream();
-            outputter.output(calendar, outputStream);
-        } else if ("delete".equals(action)) {
-            String id = request.getParameter("id");
-            String formDefId = request.getParameter("formId");
-            this.deleteEventCalendar(formDefId, id);
-        } else {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid parameter action [" + action + "]");
+                final ServletOutputStream outputStream = response.getOutputStream();
+                outputter.output(calendar, outputStream);
+            } else if ("delete".equals(action)) {
+                String id = request.getParameter("id");
+                String formDefId = request.getParameter("formId");
+                this.deleteEventCalendar(formDefId, id);
+            } else {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid parameter action [" + action + "]");
+            }
         }
     }
 
