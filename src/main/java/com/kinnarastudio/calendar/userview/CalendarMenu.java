@@ -1,7 +1,6 @@
 package com.kinnarastudio.calendar.userview;
 
 import com.kinnarastudio.commons.Try;
-import com.mysql.cj.log.Log;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
@@ -143,7 +142,10 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             dataModel.put("customId", customId);
         }
 
-        dataModel.put("hasPermissionToEdit", hasPermissionToEdit);
+        final boolean enableScrollNavigation = Boolean.parseBoolean(getPropertyString("enableScrollNavigation"));
+        LogUtil.info("enableScrollNavigation", "value: [ " + enableScrollNavigation + " ]");
+        dataModel.put("enableScrollNavigation", enableScrollNavigation);
+
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), template, null);
     }
 
@@ -262,6 +264,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             for (int datalistCount = 1; datalistCount <= numberOfDatalist; ++datalistCount) {
                 String datalistId = (String) datalistProperties.get("datalist" + datalistCount + "_datalistId");
                 String formId = (String) datalistProperties.get("datalist" + datalistCount + "_formId");
+                String dateFormat = (String) datalistProperties.get("datalist" + datalistCount + "_dateFormat");
 
                 String fieldId = (String) datalistProperties.get("datalist" + datalistCount + "_dataListMapId");
                 String fieldTitle = (String) datalistProperties.get("datalist" + datalistCount + "_dataListMapTitle");
@@ -279,7 +282,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         .collect(Collectors.toCollection(DataListCollection::new));
 
                 final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
-                final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
+                final DateFormat dateValue = new SimpleDateFormat(dateFormat);
                 for (Map<String, Object> map : dataListCollection) {
                     try {
                         JSONObject o = new JSONObject();
@@ -300,30 +303,42 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         o.put("title", title);
 
                         final String source = String.valueOf(map.get("source"));
-                        if ("google".equals(source)){
-                            final String start = String.valueOf(map.get(fieldStart));
-                            o.put("start", start);
+                        final String startDate = Optional.ofNullable(map.get(fieldStart))
+                                .map(String::valueOf)
+                                .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
+                                .map(value -> {
+                                    if (!value.contains(" ")) {
+                                        return value;
+                                    }
+                                    try {
+                                        return dateTime.format(dateValue.parse(value));
+                                    } catch (Exception e) {
+                                        return value;
+                                    }
+                                })
+                                .orElse("");
+                        o.put("start", startDate);
 
-                            final String end = String.valueOf(map.get(fieldEnd));
-                            o.put("end", end);
+                        final String endDate = Optional.ofNullable(map.get(fieldEnd))
+                                .map(String::valueOf)
+                                .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
+                                .map(value -> {
+                                    if (!value.contains(" ")) {
+                                        return value;
+                                    }
+                                    try {
+                                        return dateTime.format(dateValue.parse(value));
+                                    } catch (Exception e) {
+                                        return value;
+                                    }
+                                })
+                                .orElse("");
+                        o.put("end", endDate);
+
+                        if (StringUtils.isAllBlank(source)){
+                            o.put("source", datalistId);
                         }else {
-                            final String startDate = Optional.of(fieldStart)
-                                    .map(map::get)
-                                    .map(String::valueOf)
-//                                .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
-                                    .map(Try.onFunction(dateValue::parse))
-                                    .map(dateTime::format)
-                                    .orElse("");
-                            o.put("start", startDate);
-
-                            final String endDate = Optional.of(fieldEnd)
-                                    .map(map::get)
-                                    .map(String::valueOf)
-                                    //.map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
-                                    .map(Try.onFunction(dateValue::parse))
-                                    .map(dateTime::format)
-                                    .orElse("");
-                            o.put("end", endDate);
+                            o.put("source", source);
                         }
 
                         final String description = String.valueOf(map.get(fieldDescription));
@@ -334,7 +349,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         }else {
                             o.put("isEditable", false);
                         }
-
 
                         final boolean randomColor = randomColorByTitle();
                         if (randomColor) {
@@ -352,99 +366,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
         }
 
-        return arr;
-    }
-
-    protected JSONArray generateCalendarEvents(DataListCollection<Map<String, Object>> dataListCollectionLocal, DataListCollection<Map<String, Object>> dataListGoogleCalendar, UserviewMenu userviewMenu) {
-        JSONArray arr = new JSONArray();
-
-        /* Source Datalist From Form */
-        final String fieldId = userviewMenu.getPropertyString("dataListMapId");
-        final String fieldTitle = userviewMenu.getPropertyString("dataListMapTitle");
-        final String fieldStart = userviewMenu.getPropertyString("dataListMapDateStart");
-        final String fieldEnd = userviewMenu.getPropertyString("dataListMapDateEnd");
-
-        final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
-        final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
-
-        for (Map<String, Object> map : dataListCollectionLocal) {
-            try {
-                JSONObject o = new JSONObject();
-                final String recordId = String.valueOf(map.get(fieldId));
-                o.put("id", recordId);
-
-                final String title = String.valueOf(map.get(fieldTitle));
-                o.put("title", title);
-
-                final String startDate = Optional.of(fieldStart)
-                        .map(map::get)
-                        .map(String::valueOf)
-                        //.map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
-                        .map(Try.onFunction(dateValue::parse))
-                        .map(dateTime::format)
-                        .orElse("");
-                o.put("start", startDate);
-
-                final String endDate = Optional.of(fieldEnd)
-                        .map(map::get)
-                        .map(String::valueOf)
-                        //.map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
-                        .map(Try.onFunction(dateValue::parse))
-                        .map(dateTime::format)
-                        .orElse("");
-                o.put("end", endDate);
-
-                o.put("isPublicCalendar", false);
-
-                final boolean randomColor = randomColorByTitle();
-                if (randomColor) {
-                    final String digest = StringUtil.md5(title);
-                    final String color = digest.substring(0, 6);
-                    o.put("color", "#" + color);
-                }
-                /* Add event to array */
-                arr.put(o);
-            } catch (JSONException tes) {
-                LogUtil.error(getClassName(), tes, tes.getMessage());
-            }
-        }
-
-        /* Source Datalist Google Calendar */
-        for (Map<String, Object> map : dataListGoogleCalendar) {
-            try {
-                JSONObject o = new JSONObject();
-                final String recordId = String.valueOf(map.get("id"));
-                o.put("id", recordId);
-
-                final String title = String.valueOf(map.get("title"));
-                o.put("title", title);
-
-                final String start = String.valueOf(map.get("start"));
-                o.put("start", start);
-
-                final String end = String.valueOf(map.get("end"));
-                o.put("end", end);
-
-                final String description = String.valueOf(map.get("description"));
-                o.put("description", description);
-
-                final String location = String.valueOf(map.get("location"));
-                o.put("location", location);
-
-                o.put("isPublicCalendar", true);
-
-                final boolean randomColor = randomColorByTitle();
-                if (randomColor) {
-                    final String digest = StringUtil.md5(title);
-                    final String color = digest.substring(0, 6);
-                    o.put("color", "#" + color);
-                }
-                /* Add event to array */
-                arr.put(o);
-            } catch (JSONException tes) {
-                LogUtil.error(getClassName(), tes, tes.getMessage());
-            }
-        }
         return arr;
     }
 
@@ -682,7 +603,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             StringBuilder output = new StringBuilder("[");
             for (int i = 1; i <= number; ++i) {
                 String pageNumber = Integer.toString(i);
-                Object[] arguments = new String[]{pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber};
+                Object[] arguments = new String[]{pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber, pageNumber};
                 output.append(AppUtil.readPluginResource(getClass().getName(), "/properties/DatalistChild.json", arguments, true)).append(",");
             }
             output = new StringBuilder(output.substring(0, output.length() - 1) + "]");

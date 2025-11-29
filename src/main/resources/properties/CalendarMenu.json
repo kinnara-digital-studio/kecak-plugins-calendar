@@ -126,6 +126,18 @@
         ]
       },
       {
+        "name": "enableScrollNavigation",
+        "label": "Enable Scroll Navigation",
+        "value": "false",
+        "type": "checkbox",
+        "options": [
+          {
+            "value": "true",
+            "label": ""
+          }
+        ]
+      },
+      {
         "type": "header",
         "label": "Permission"
       },

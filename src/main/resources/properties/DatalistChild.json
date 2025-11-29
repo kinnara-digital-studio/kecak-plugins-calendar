@@ -20,6 +20,12 @@
                 "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
             },
             {
+              "name" : "datalist%s_dateFormat",
+              "label" : "Date Format",
+              "type" : "textfield",
+              "value" : "yyyy-MM-dd HH:mm"
+            },
+            {
               "label": "DataList Mapping",
               "type": "header"
             },

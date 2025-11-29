@@ -226,7 +226,7 @@ function showEventInfoPopup(data) {
 
     const desc = document.createElement("pre");
     desc.className = "description-event-box";
-    desc.innerText = data.description;
+    desc.innerText = data.description != "null" ? data.description : "No Description";
 
     // BUTTON AREA
     const btnWrap = document.createElement("div");

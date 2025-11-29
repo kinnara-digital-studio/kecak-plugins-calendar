@@ -188,7 +188,7 @@
                             userviewId: '${userviewId}',
                             menuId: '${menuId}',
                             action: 'event',
-                            hasPermissionToEdit: '${hasPermissionToEdit?string}',
+                            hasPermissionToEdit: '${editable?string}',
                             start: fetchInfo.startStr,
                             end: fetchInfo.endStr
                         },
@@ -233,13 +233,17 @@
                         jsonForm: info.event.extendedProps.jsonForm,
                         nonce: info.event.extendedProps.nonce,
                         formId: info.event.extendedProps.formId,
-                        datalistId: info.event.extendedProps.datalistId
+                        datalistId: info.event.extendedProps.datalistId,
+                        source: info.event.extendedProps.source
                     });
                 }
 
             });
             kecakCalendar.render();
-            enableScrollNavigation();
+            var enableScrollNav = '${enableScrollNavigation?string}';
+            if (enableScrollNav === "true") {
+                enableScrollNavigation();
+            }
             // ===============================================
             // Remove Button View Dropdown Generate By FC
             // ===============================================
