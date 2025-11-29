@@ -225,8 +225,8 @@
                     showEventInfoPopup({
                         id: info.event.id,
                         title: info.event.title,
-                        start: info.event.startStr,
-                        end: info.event.endStr,
+                        startDateTime: info.event.extendedProps.infoStartDateTime,
+                        endDateTime: info.event.extendedProps.infoEndDateTime,
                         location: info.event.extendedProps.location,
                         description: info.event.extendedProps.description,
                         isEditable: info.event.extendedProps.isEditable,

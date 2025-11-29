@@ -318,6 +318,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                                 })
                                 .orElse("");
                         o.put("start", startDate);
+                        o.put("infoStartDateTime", startDate);
 
                         final String endDate = Optional.ofNullable(map.get(fieldEnd))
                                 .map(String::valueOf)
@@ -334,6 +335,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                                 })
                                 .orElse("");
                         o.put("end", endDate);
+                        o.put("infoEndDateTime", endDate);
 
                         if (StringUtils.isAllBlank(source)){
                             o.put("source", datalistId);

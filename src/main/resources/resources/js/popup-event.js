@@ -62,7 +62,7 @@ function dayEventsPopup(info, events){
         eventsContainer.appendChild(eventItem);
     }else {
         // Loop event
-        events.sort((a, b) => new Date(a.startStr) - new Date(b.startStr));
+        events.sort((a, b) => new Date(a.extendedProps.infoStartDateTime) - new Date(b.extendedProps.infoStartDateTime));
         events.forEach(ev => {
             const eventItem = document.createElement("div");
             eventItem.className = "event_item";
@@ -74,8 +74,8 @@ function dayEventsPopup(info, events){
             const infoWrap = document.createElement("div");
             infoWrap.className = "event_item_info";
 
-            const start = formatDateTime(ev.startStr);
-            const end = formatDateTime(ev.endStr);
+            const start = formatDateTime(ev.extendedProps.infoStartDateTime);
+            const end = formatDateTime(ev.extendedProps.infoEndDateTime);
 
             const title = document.createElement("div");
             title.className = "event_item_title";
@@ -166,8 +166,6 @@ function formatDateTime(stringDate) {
 }
 
 function showEventInfoPopup(data) {
-    debugger;
-    const dat = data;
     const containerCalendar = document.getElementById("calendar");
 
     // Container
@@ -205,12 +203,12 @@ function showEventInfoPopup(data) {
     const h2 = document.createElement("h2");
     h2.innerText = data.title;
 
-    const startDateTime = formatDateTime(data.start);
+    const startDateTime = formatDateTime(data.startDateTime);
     const start = document.createElement("div");
     start.className = "event-time-row";
     start.innerHTML = "⏱ Start: " + startDateTime.date + " - " + startDateTime.time;
 
-    const endDateTime = formatDateTime(data.end);
+    const endDateTime = formatDateTime(data.endDateTime);
     const end = document.createElement("div");
     end.className = "event-time-row";
     end.innerHTML = "⏱ End: " + endDateTime.date + " - " + endDateTime.time;
