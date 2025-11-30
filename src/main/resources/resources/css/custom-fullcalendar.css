@@ -251,3 +251,23 @@ html {
 .calendar-menu-dropdown .menu-item:hover {
    background: #f3f3f3;
 }
+
+/* Style dropdown */
+.calendar-addevent-dropdown {
+   position: absolute;
+   background: white;
+   border-radius: 8px;
+   padding: 6px 0;
+   width: 140px;
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+   z-index: 99999;
+}
+
+.calendar-addevent-dropdown .addevent-item {
+   padding: 10px 14px;
+   cursor: pointer;
+}
+
+.calendar-addevent-dropdown .addevent-item:hover {
+   background: #f3f3f3;
+}

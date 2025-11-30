@@ -73,6 +73,61 @@
             popupForm(data.formId, '${appId}', '${appVersion}', JSON.parse(data.jsonForm), data.nonce, {}, {id: data.id}, 800, 900);
         }
 
+        function toggleAddEventDropdown(forms) {
+            const existing = document.getElementById("calendar-addevent-dropdown");
+            if (existing) {
+                existing.remove();
+                return;
+            }
+
+            const btn = document.querySelector(".fc-addButton-button");
+            const rect = btn.getBoundingClientRect();
+
+            const menu = document.createElement("div");
+            menu.id = "calendar-addevent-dropdown";
+            menu.className = "calendar-addevent-dropdown";
+
+            let html = "";
+            <#assign listForm = (forms?eval_json)![]>
+            <#list listForm as form>
+                    html += `
+                        <div class="addevent-item"
+                           data-id="${form.id!}"
+                           data-json='${form.jsonForm!}'
+                           data-nonce="${form.nonce!}">
+                           ${form.name!}
+                        </div>`;
+            </#list>
+            menu.innerHTML = html;
+            menu.addEventListener("click", function (e) {
+                const item = e.target.closest(".addevent-item");
+                if (!item) return;
+
+                const id = item.dataset.id;
+                const jsonForm = item.dataset.json;
+                const nonce = item.dataset.nonce;
+
+                addEventClicked(id, jsonForm, nonce);
+                menu.remove();
+            });
+
+            document.body.appendChild(menu);
+
+            menu.style.top = (rect.bottom + 5) + "px";
+            menu.style.left = (rect.left - 20) + "px";
+
+            document.addEventListener("click", function handler(e) {
+                if (!menu.contains(e.target) && e.target !== btn) {
+                    menu.remove();
+                    document.removeEventListener("click", handler);
+                }
+            });
+        }
+
+        function addEventClicked(id, jsonForm, nonce) {
+            popupForm(id, '${appId}', '${appVersion}', JSON.parse(jsonForm), nonce, {}, {}, 800, 900);
+        }
+
         function toggleMenuDropdown() {
             const existing = document.getElementById("calendar-menu-dropdown");
             if (existing) {
@@ -138,6 +193,7 @@
             var calendarEl = document.getElementById('calendar');
             var jsonForm = $('input#jsonForm').val() ? JSON.parse($('input#jsonForm').val()) : {};
             var nonce = '${nonce!}';
+            const forms = '${forms!}';
             kecakCalendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
 
@@ -151,7 +207,7 @@
                         addButton: {
                             text: 'Add Event',
                             click: function() {
-                                popupForm('${formDefId}', '${appId}', '${appVersion}', jsonForm, nonce, {}, {}, 800, 900);
+                                toggleAddEventDropdown(forms);
                             }
                         },
                     </#if>

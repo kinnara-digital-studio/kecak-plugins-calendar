@@ -146,6 +146,12 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         LogUtil.info("enableScrollNavigation", "value: [ " + enableScrollNavigation + " ]");
         dataModel.put("enableScrollNavigation", enableScrollNavigation);
 
+        try {
+            dataModel.put("forms", getListForm(appDefinition, hasPermissionToEdit).toString());
+        } catch (JSONException e) {
+            dataModel.put("forms", new JSONArray());
+        }
+
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), template, null);
     }
 
@@ -190,6 +196,35 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
     @Override
     public String getPropertyOptions() {
         return AppUtil.readPluginResource(getClass().getName(), "/properties/CalendarMenu.json");
+    }
+
+    protected JSONArray getListForm(AppDefinition appDefinition, boolean hasPermissionToEdit) throws JSONException {
+        ApplicationContext appContext = AppUtil.getApplicationContext();
+        FormDefinitionDao formDefinitionDao = (FormDefinitionDao) appContext.getBean("formDefinitionDao");
+        Map<String, Object> numberOfDatalistObject= (Map<String, Object>) getProperty("numberOfDatalist");
+
+        JSONArray jsonArray = new JSONArray();
+        if (numberOfDatalistObject != null) {
+            int numberOfDatalist = Integer.parseInt(numberOfDatalistObject.get("className").toString());
+            Map datalistProperties = (Map) numberOfDatalistObject.get("properties");
+            for (int datalistCount = 1; datalistCount <= numberOfDatalist; ++datalistCount) {
+                String formId = (String) datalistProperties.get("datalist" + datalistCount + "_formId");
+                if (StringUtils.isNotBlank(formId)) {
+                    JSONObject obj = new JSONObject();
+                    FormDefinition formDef = formDefinitionDao.loadById(formId, appDefinition);
+                    obj.put("id", formId);
+                    obj.put("name", formDef.getName());
+
+                    final JSONObject jsonForm = getJsonForm(formId, !hasPermissionToEdit);
+                    obj.put("jsonForm", jsonForm.toString());
+                    obj.put("nonce", generateNonce(appDefinition, jsonForm.toString()));
+
+                    jsonArray.put(obj);
+                }
+            }
+        }
+
+        return jsonArray;
     }
 
     protected DataList getDataList(String dataListId) {
@@ -237,6 +272,8 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         FormService formService = (FormService) appContext.getBean("formService");
         FormDefinitionDao formDefinitionDao = (FormDefinitionDao) appContext.getBean("formDefinitionDao");
         AppDefinition appDef = AppUtil.getCurrentAppDefinition();
+        FormDefinition formDef = formDefinitionDao.loadById(formDefId, appDef);
+        LogUtil.info("Form Definition Name: ", "[ " + formDef.getName() + " ]");
 
         return Optional.of(formDefId)
                 .map(s -> formDefinitionDao.loadById(s, appDef))

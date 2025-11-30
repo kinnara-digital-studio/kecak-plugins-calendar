@@ -91,12 +91,6 @@
         ],
         "url": "[CONTEXT_PATH]/web/json/app[APP_PATH]/plugin/com.kinnarastudio.calendar.userview.CalendarMenu/service?action=getJson",
         "keep_value_on_change": "true"
-      },
-      {
-        "name" : "dateFormat",
-        "label" : "Date Format",
-        "type" : "textfield",
-        "required" : "true"
       }
     ]
   },
