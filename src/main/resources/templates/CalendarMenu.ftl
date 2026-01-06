@@ -70,7 +70,7 @@
                     }
                 },
                 headerToolbar: {
-                    left: 'prev,next <#if editable>addButton </#if>exportButtons timelineButton', //prev next  and add event add button
+                    left: 'prev,next<#if editable> addButton</#if><#if exportable> exportButtons</#if><#if timelineView> timelineButton</#if>', //prev next  and add event add button
                     center: 'title',
                     right: 'timeGridDay,dayGridWeek,dayGridMonth,multiMonthYear,listMonth' // user can switch calendar between day, week, month, and year
                 },

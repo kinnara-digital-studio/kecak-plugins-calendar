@@ -129,6 +129,9 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             dataModel.put("editable", hasPermissionToEdit);
         }
 
+        dataModel.put("exportable", isExportable());
+        dataModel.put("timelineView", showTimelineView());
+
         final String userviewId = getUserview().getPropertyString("id");
         dataModel.put("userviewId", userviewId);
 
@@ -381,59 +384,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
                         final String row = String.valueOf(map.get(fieldTimelineRow));
                         put("row", row);
-
-//                        for (Map<String, String> propmapping : dataListMapping) {
-//                            final String field = propmapping.get("field");
-//                            final String prop = propmapping.get("prop");
-//                            final String value = String.valueOf(map.get(field));
-//
-//                            if (value == null) continue;
-//
-//                            switch (prop) {
-//                                case "start":
-//                                    try {
-//                                        final Date dtListDate = dateValue.parse(value);
-//                                        if (dtListDate.before(late)) {
-//                                            final String finalDate;
-//                                            if (dtListDate.before(early)) {
-//                                                finalDate = dateTime.format(early);
-//                                            } else {
-//                                                finalDate = dateTime.format(dtListDate);
-//                                            }
-//                                            put(prop, finalDate);
-//                                        }
-//                                    } catch (ParseException e) {
-//                                        LogUtil.error(getClassName(), e, e.getLocalizedMessage());
-//                                    }
-//                                    break;
-//                                case "end":
-//                                    try {
-//                                        final Date dtListDate = dateValue.parse(value);
-//                                        if (dtListDate.after(early)) {
-//                                            final String finalDate;
-//                                            if (dtListDate.after(late)) {
-//                                                finalDate = dateTime.format(late);
-//                                            } else {
-//                                                finalDate = dateTime.format(dtListDate);
-//                                            }
-//                                            put(prop, finalDate);
-//                                        }
-//
-//                                    } catch (ParseException e) {
-//                                        LogUtil.error(getClassName(), e, e.getLocalizedMessage());
-//                                    }
-//                                    break;
-//                                case "title":
-//                                    put("row", value);
-//                                    break;
-//                                case "id":
-//                                    put("recordID", value);
-//                                    break;
-//                                default:
-//                                    put(prop, value);
-//                                    break;
-//                            }
-//                        }
                     }};
 
                     if (jsonRow.has("start") && jsonRow.has("end")) {
@@ -468,14 +418,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 //        Userview userview = getUserview(userviewId);
 
         try (BufferedReader br = request.getReader()) {
-            String strPayload = br.lines().collect(Collectors.joining());
-
-            LogUtil.info(getClassName(), "strPayload [" + strPayload + "]");
-
-            JSONObject menuObj = new JSONObject(strPayload);
-
-            LogUtil.info(getClassName(), "menuObj [" + menuObj + "]");
-
+            JSONObject menuObj = new JSONObject(br.lines().collect(Collectors.joining()));
 //            UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
             UserviewMenu userviewMenu = getUserviewMenu(menuObj);
 
@@ -770,5 +713,13 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     public String getDataListMapTimelineRow() {
         return getPropertyString("dataListMapTimelineRow");
+    }
+
+    protected boolean isExportable() {
+        return "true".equalsIgnoreCase(getPropertyString("exportable"));
+    }
+
+    protected boolean showTimelineView() {
+        return "true".equalsIgnoreCase(getPropertyString("timelimeView"));
     }
 }

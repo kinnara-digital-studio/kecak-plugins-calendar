@@ -93,6 +93,28 @@
         ]
       },
       {
+        "name": "exportable",
+        "label": "Show Export Button",
+        "type": "checkbox",
+        "options": [
+          {
+            "value": "true",
+            "label": ""
+          }
+        ]
+      },
+      {
+        "name": "timelimeView",
+        "label": "Show Gantt-Chart Button",
+        "type": "checkbox",
+        "options": [
+          {
+            "value": "true",
+            "label": ""
+          }
+        ]
+      },
+      {
         "type": "header",
         "label": "Permission"
       },
