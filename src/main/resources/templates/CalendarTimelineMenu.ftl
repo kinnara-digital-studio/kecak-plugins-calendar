@@ -27,7 +27,14 @@
 
         async function _refreshFunction(page = 0) {
             try {
-                const response = await fetch('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline&page=' + page);
+                let url = '${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=timeline&page=' + page;
+                let response = await fetch(url, {
+                    method: 'POST', // *set the method to POST*
+                    headers: {
+                        'Content-Type': 'application/json' // *specify the content type*
+                    },
+                    body: JSON.stringify(${menuObj!})
+                });
                 
                 if (!response.ok) throw new Error('HTTP error! Status: ' + response.status);
 

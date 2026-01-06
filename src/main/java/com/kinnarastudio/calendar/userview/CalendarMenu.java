@@ -34,6 +34,7 @@ import org.joget.commons.util.StringUtil;
 import org.joget.directory.model.User;
 import org.joget.plugin.base.PluginManager;
 import org.joget.plugin.base.PluginWebSupport;
+import org.joget.plugin.property.service.PropertyUtil;
 import org.joget.workflow.model.service.WorkflowUserManager;
 import org.joget.workflow.util.WorkflowUtil;
 import org.json.JSONArray;
@@ -46,7 +47,9 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -90,6 +93,7 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         ApplicationContext appContext = AppUtil.getApplicationContext();
         PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
         WorkflowUserManager workflowUserManager = (WorkflowUserManager) appContext.getBean("workflowUserManager");
+        UserviewService userviewService = (UserviewService) appContext.getBean("userviewService");
 
         final Map<String, Object> dataModel = new HashMap<>();
 
@@ -128,10 +132,21 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
         final String userviewId = getUserview().getPropertyString("id");
         dataModel.put("userviewId", userviewId);
 
-        final String userMenuId = getUserview().getCurrent().getPropertyString("id");
+        UserviewMenu menu = getUserview().getCurrent();
+        final String userMenuId = menu.getPropertyString("id");
         dataModel.put("menuId", userMenuId);
 
-        final String customId = getUserview().getCurrent().getPropertyString("customId");
+        String menuObj = new JSONObject() {{
+            try {
+                put("className", getClassName());
+                put("properties", new JSONObject(getProperties()));
+            } catch (JSONException e) {
+                LogUtil.error(getClassName(), e, e.getMessage());
+            }
+        }}.toString();
+        dataModel.put("menuObj", menuObj);
+
+        final String customId = menu.getPropertyString("customId");
         if (customId != null && !customId.isEmpty()) {
             dataModel.put("customId", customId);
         }
@@ -445,58 +460,74 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        LogUtil.info(getClassName(), "Executing Web service");
+
         String dataListId = getParameter(request, "datalistId");
-        String userviewId = getParameter(request, "userviewId");
-        String menuId = getParameter(request, "menuId");
-        Userview userview = getUserview(userviewId);
-        UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
+//        String userviewId = getParameter(request, "userviewId");
+//        String menuId = getParameter(request, "menuId");
+//        Userview userview = getUserview(userviewId);
 
-        if (userviewMenu == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
+        try (BufferedReader br = request.getReader()) {
+            String strPayload = br.lines().collect(Collectors.joining());
 
-        assert userviewMenu instanceof CalendarMenu;
+            LogUtil.info(getClassName(), "strPayload [" + strPayload + "]");
 
-        DataList dataList = getDataList(dataListId);
-        DataListCollection<Map<String, Object>> rows = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataList.getRows())
-                .stream()
-                .flatMap(Collection::stream)
+            JSONObject menuObj = new JSONObject(strPayload);
 
-                // reformat content value
-                .map(row -> formatRow(dataList, row))
-                .collect(Collectors.toCollection(DataListCollection::new));
+            LogUtil.info(getClassName(), "menuObj [" + menuObj + "]");
+
+//            UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
+            UserviewMenu userviewMenu = getUserviewMenu(menuObj);
+
+            if (userviewMenu == null) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            assert userviewMenu instanceof CalendarMenu;
+
+            DataList dataList = getDataList(dataListId);
+            DataListCollection<Map<String, Object>> rows = Optional.ofNullable((DataListCollection<Map<String, Object>>) dataList.getRows())
+                    .stream()
+                    .flatMap(Collection::stream)
+
+                    // reformat content value
+                    .map(row -> formatRow(dataList, row))
+                    .collect(Collectors.toCollection(DataListCollection::new));
 
 
-        final String action = getParameter(request, "action");
-        if ("event".equals(action)) {
-            final JSONArray events = generateEvents(rows, userviewMenu);
-            response.getWriter().write(events.toString());
-        } else if ("timeline".equals(action)) {
+            final String action = getParameter(request, "action");
+            if ("event".equals(action)) {
+                final JSONArray events = generateEvents(rows, userviewMenu);
+                response.getWriter().write(events.toString());
+            } else if ("timeline".equals(action)) {
 //                final JSONArray events = new JSONArray(AppUtil.readPluginResource(getClassName(), "/resources/mock-data.json"));
-            final int page = optParameter(request, "page")
-                    .map(Try.onFunction(Integer::parseInt, (NumberFormatException ignored) -> 0))
-                    .orElse(0);
+                final int page = optParameter(request, "page")
+                        .map(Try.onFunction(Integer::parseInt, (NumberFormatException ignored) -> 0))
+                        .orElse(0);
 
-            final JSONArray events = getTimelineData(rows, userviewMenu, page);
+                final JSONArray events = getTimelineData(rows, userviewMenu, page);
 
-            response.getWriter().write(events.toString());
-        } else if ("ical".equals(action)) {
-            net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
-            calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
-            calendar.getProperties().add(net.fortuna.ical4j.model.property.Version.VERSION_2_0);
-            calendar.getProperties().add(CalScale.GREGORIAN);
+                response.getWriter().write(events.toString());
+            } else if ("ical".equals(action)) {
+                net.fortuna.ical4j.model.Calendar calendar = new net.fortuna.ical4j.model.Calendar();
+                calendar.getProperties().add(new ProdId("-//Ben Fortuna//iCal4j 1.0//EN"));
+                calendar.getProperties().add(net.fortuna.ical4j.model.property.Version.VERSION_2_0);
+                calendar.getProperties().add(CalScale.GREGORIAN);
 
-            final Collection<VEvent> events = generateVEvents(rows, userviewMenu);
-            calendar.getComponents().addAll(events);
+                final Collection<VEvent> events = generateVEvents(rows, userviewMenu);
+                calendar.getComponents().addAll(events);
 
-            final CalendarOutputter outputter = new CalendarOutputter();
-            response.addHeader("Content-Disposition", "attachment; filename=calendar.ics");
+                final CalendarOutputter outputter = new CalendarOutputter();
+                response.addHeader("Content-Disposition", "attachment; filename=calendar.ics");
 
-            final ServletOutputStream outputStream = response.getOutputStream();
-            outputter.output(calendar, outputStream);
-        } else {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid parameter action [" + action + "]");
+                final ServletOutputStream outputStream = response.getOutputStream();
+                outputter.output(calendar, outputStream);
+            } else {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid parameter action [" + action + "]");
+            }
+        } catch (JSONException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -591,6 +622,13 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                 .filter(m -> !userviewId.isEmpty() && userviewId.equalsIgnoreCase(m.getPropertyString("id")))
                 .findFirst()
                 .orElse(null);
+    }
+
+    protected UserviewMenu getUserviewMenu(JSONObject json) throws JSONException {
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        UserviewMenu menu = (UserviewMenu) pluginManager.getPlugin(json.getString("className"));
+        menu.setProperties(PropertyUtil.getProperties(json.getJSONObject("properties")));
+        return menu;
     }
 
     protected boolean randomColorByTitle() {

@@ -78,10 +78,16 @@
                 dayMaxEvents: true, // allow "more" link when too many events
                 navLinks: true,
                 events: function(fetchInfo, successCallback, failureCallback){
-                    $.get('${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=event', function(data, status){
-                        successCallback(
-                            data
-                        );
+                    let url = '${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service?datalistId=${dataListId}&userviewId=${userviewId}&menuId=${menuId}&action=event';
+                    let menuObj = JSON.stringify(${menuObj!});
+
+                    $.ajax({
+                        type: "POST",
+                        url: url,
+                        data: menuObj,
+                        success: (data, status) => successCallback(data),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: 'json'
                     });
                 }
                 <#if jsonForm?? >
