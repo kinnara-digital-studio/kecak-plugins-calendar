@@ -154,6 +154,9 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
             dataModel.put("customId", customId);
         }
 
+        String elementUniqueKey = FormUtil.getUniqueKey();
+        dataModel.put("elementUniqueKey", elementUniqueKey);
+
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClass().getName(), template, null);
     }
 
