@@ -41,8 +41,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('${elementUniqueKey}-calendar');
-            var jsonForm = $('input#jsonForm').val() ? JSON.parse($('input#${elementUniqueKey}-jsonForm').val()) : {};
+            let calendarEl = document.getElementById('${elementUniqueKey}-calendar');
+            var jsonForm = $('input#${elementUniqueKey}-jsonForm').val() ? JSON.parse($('input#${elementUniqueKey}-jsonForm').val()) : {};
             var nonce = '${nonce!}';
             kecakCalendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
