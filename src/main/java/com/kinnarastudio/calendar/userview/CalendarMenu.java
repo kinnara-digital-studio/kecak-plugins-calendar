@@ -263,7 +263,6 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         final String startDate = Optional.of(fieldStart)
                                 .map(map::get)
                                 .map(String::valueOf)
-                                .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldStart [" + s + "]")))
                                 .map(Try.onFunction(dateValue::parse))
                                 .map(dateTime::format)
                                 .orElse("");
@@ -272,32 +271,10 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
                         final String endDate = Optional.of(fieldEnd)
                                 .map(map::get)
                                 .map(String::valueOf)
-                                .map(Try.toPeek(s -> LogUtil.info(getClassName(), "fieldEnd [" + s + "]")))
                                 .map(Try.onFunction(dateValue::parse))
                                 .map(dateTime::format)
                                 .orElse("");
                         put("end", endDate);
-
-//                        for (Map<String, String> propmapping : userviewMenu.getPropertyGrid("dataListMapping")) {
-//                            String field = propmapping.get("field");
-//                            String prop = propmapping.get("prop");
-//                            String value = String.valueOf(map.get(field));
-//                            final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
-//                            final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
-//                            if ((prop.equals("start") || prop.equals("end")) && value != null) {
-//                                try {
-//                                    final Date dtListDate = dateValue.parse(value);//tanggal yang diambil dari data list
-//                                    //mengubah value dg tipe data String ke tipe data Date
-//
-//                                    String finalDate = dateTime.format(dtListDate);//memasukan hasil parse dari dtListDate;
-//                                    put(prop, finalDate);
-//                                } catch (ParseException e) {
-//                                    LogUtil.error(getClassName(), e, e.getLocalizedMessage());
-//                                }
-//                            } else if (value != null) {
-//                                put(prop, value);
-//                            }
-//                        }
 
                         final boolean randomColor = randomColorByTitle();
                         if (randomColor) {
@@ -331,10 +308,8 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
         final Date late = calendar.getTime();
 
-        LogUtil.info(getClassName(), "early [" + early + "] late [" + late + "]");
         final DateFormat dateValue = new SimpleDateFormat(userviewMenu.getPropertyString("dateFormat"));
         final DateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
-//        final Map<String, String>[] dataListMapping = userviewMenu.getPropertyGrid("dataListMapping");
 
         final String fieldId = userviewMenu.getPropertyString("dataListMapId");
         final String fieldTitle = userviewMenu.getPropertyString("dataListMapTitle");
@@ -413,16 +388,11 @@ public class CalendarMenu extends UserviewMenu implements PluginWebSupport {
 
     @Override
     public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        LogUtil.info(getClassName(), "Executing Web service");
 
         String dataListId = getParameter(request, "datalistId");
-//        String userviewId = getParameter(request, "userviewId");
-//        String menuId = getParameter(request, "menuId");
-//        Userview userview = getUserview(userviewId);
 
         try (BufferedReader br = request.getReader()) {
             JSONObject menuObj = new JSONObject(br.lines().collect(Collectors.joining()));
-//            UserviewMenu userviewMenu = getUserviewMenu(userview, menuId);
             UserviewMenu userviewMenu = getUserviewMenu(menuObj);
 
             if (userviewMenu == null) {
